@@ -1,0 +1,100 @@
+# Preview client, publiée sur GitHub Pages.
+#
+# Pages ne sert que des fichiers : pas d'action serveur, pas de middleware, pas d'optimiseur
+# d'images. Le site est donc exporté deux fois, une par entité, et les deux exports sont posés
+# côte à côte sous une même racine. Le sélecteur d'entité devient un lien de l'un vers l'autre.
+#
+# Ce que la preview ne montre pas, et qui existe sur la cible réelle : la résolution de l'entité
+# par le nom de domaine, l'envoi du formulaire par SMTP, et l'en-tête X-Robots-Tag. La balise
+# meta de non-indexation et le robots.txt, eux, sont bien présents.
+name: Preview client sur GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Une seule publication à la fois : deux déploiements concurrents laisseraient le site dans un
+# état mêlant les deux constructions.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  # Chemin sous lequel Pages sert ce dépôt. À changer si le dépôt est renommé.
+  RACINE: /monstera-website
+
+jobs:
+  construire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Ces trois substitutions n'existent que dans cette construction. Le dépôt garde la version
+      # serveur, qui reste la cible réelle du projet.
+      - name: Remplacer ce qu'un export ne sait pas faire
+        run: |
+          cp src/brand/actions.statique.ts src/brand/actions.ts
+          cp src/app/contact/actions.statique.ts src/app/contact/actions.ts
+          rm -f src/proxy.ts
+
+      - name: Exporter les deux entités
+        run: |
+          mkdir -p site
+          for marque in investments advisors; do
+            NEXT_PUBLIC_MARQUE_STATIQUE="$marque" NEXT_PUBLIC_RACINE_STATIQUE="$RACINE" pnpm build
+            mv out "site/$marque"
+            rm -rf .next
+          done
+
+      - name: Poser la page d'entrée
+        run: |
+          # Sans ce fichier, Pages passe le résultat à Jekyll, qui ignore tout dossier commençant
+          # par un souligné — donc l'intégralité de _next, donc le site sans style ni script.
+          touch site/.nojekyll
+
+          cat > site/index.html <<'HTML'
+          <!doctype html>
+          <html lang="fr">
+            <head>
+              <meta charset="utf-8" />
+              <meta name="viewport" content="width=device-width, initial-scale=1" />
+              <meta name="robots" content="noindex, nofollow" />
+              <meta http-equiv="refresh" content="0; url=./investments/" />
+              <title>Preview</title>
+            </head>
+            <body>
+              <p><a href="./investments/">Accéder à la preview</a></p>
+            </body>
+          </html>
+          HTML
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deployer:
+    needs: construire
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.publication.outputs.page_url }}
+    steps:
+      - id: publication
+        uses: actions/deploy-pages@v4
