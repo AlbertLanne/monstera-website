@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-import poster from '@/assets/images/hero-geneve-poster.jpg'
+import poster from '@/assets/images/hero-geneve-poster.webp'
 
 /**
  * Vidéo d'arrière-plan du hero d'accueil (Genève, fournie par le client).
@@ -50,7 +50,8 @@ export function HeroVideo() {
         preload="none"
         tabIndex={-1}
         src={source ?? undefined}
-        className="h-full w-full object-cover"
+        data-parallax="5"
+        className="brand-media h-full w-full object-cover"
       />
       <div className="absolute inset-0 bg-(image:--overlay-video)" />
     </div>

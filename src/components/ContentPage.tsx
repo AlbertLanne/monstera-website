@@ -5,6 +5,7 @@ import { resolveBrandText } from '@/brand/brands'
 import { getBrand } from '@/brand/resolve'
 import { PageBody } from '@/components/PageBody'
 import { PageHero } from '@/components/PageHero'
+import { heroDePage, imagesDeCorps } from '@/config/images-pages'
 import { getPage, type PageSlug } from '@/content/fr'
 
 export type ContentPageProps = {
@@ -23,6 +24,10 @@ export type ContentPageProps = {
  *
  * Les 19 fiches livrées en .odt partagent la même structure — titre, chapeau, sections,
  * appel à l'action, avertissement — ce qui permet de n'avoir qu'un seul gabarit.
+ *
+ * Les images viennent du lot livré pour ce slug quand il en existe un, et l'appelant n'a rien à
+ * passer : les dix fiches Finance ont leur dossier d'images, les autres pages fournissent leur
+ * propre `image` d'ouverture. Une `image` passée explicitement l'emporte sur le lot.
  */
 export async function ContentPage({
   slug,
@@ -35,6 +40,11 @@ export async function ContentPage({
   const brand = await getBrand()
   const page = getPage(slug)
 
+  // Une image passée par la page l'emporte sur celle du registre : les six photographies
+  // livrées à l'origine par le client gardent leur page d'ouverture.
+  const hero = heroDePage(slug)
+  const corps = imagesDeCorps(slug)
+
   return (
     <>
       <PageHero
@@ -42,10 +52,10 @@ export async function ContentPage({
         title={page.title ?? page.menu}
         lead={page.lead}
         brand={brand}
-        image={image}
-        imageAlt={imageAlt}
+        image={image ?? hero?.src}
+        imageAlt={image ? imageAlt : (hero?.alt ?? '')}
       />
-      <PageBody page={page} brand={brand} ctaHref={ctaHref} compact={compact} />
+      <PageBody page={page} brand={brand} ctaHref={ctaHref} compact={compact} images={corps} />
     </>
   )
 }

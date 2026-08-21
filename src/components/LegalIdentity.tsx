@@ -1,6 +1,40 @@
 import type { Brand } from '@/brand/brands'
 
-type Row = { label: string; value: string }
+type Row = {
+  label: string
+  value: string
+  /** Fiche publique correspondante, quand la donnée est vérifiable en ligne. */
+  href?: string
+}
+
+const LINK_CLASS =
+  'text-accent-contrast underline decoration-line-strong decoration-1 underline-offset-4 ' +
+  'transition-colors hover:decoration-accent'
+
+/**
+ * La fiche de l'entité affichée au registre du commerce.
+ *
+ * Le visiteur d'un site financier doit pouvoir vérifier à qui il écrit sans quitter la page pour
+ * aller chercher. Seule la société affichée est nommée : sur le domaine d'Advisors, renvoyer
+ * aussi vers Investments mélangerait deux personnes morales que tout le reste du site sépare.
+ */
+function RegistryLink({ brand }: { brand: Brand }) {
+  return (
+    <div data-registry-link className="mt-4">
+      <p className="text-[0.6875rem] uppercase tracking-[0.1em] text-text-muted">
+        Vérifier au registre du commerce
+      </p>
+      <a
+        href={brand.registryUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`mt-1.5 inline-block text-[0.8125rem] leading-snug ${LINK_CLASS}`}
+      >
+        {brand.legalName} sur Moneyhouse
+      </a>
+    </div>
+  )
+}
 
 /**
  * Identité légale de l'entité active.
@@ -9,7 +43,14 @@ type Row = { label: string; value: string }
  * Argentum Advisors SA n'a pas encore communiqué son adresse ni son UID, et aucune des deux
  * entités n'a de numéro de téléphone.
  */
-export function LegalIdentity({ brand }: { brand: Brand }) {
+export function LegalIdentity({
+  brand,
+  /** Ajoute sous le numéro de registre le lien vers la fiche Moneyhouse de la société affichée. */
+  registryLink = false,
+}: {
+  brand: Brand
+  registryLink?: boolean
+}) {
   const rows: Row[] = []
 
   if (brand.uid) rows.push({ label: 'Numéro d’identification de l’entreprise (UID)', value: brand.uid })
@@ -36,24 +77,38 @@ export function LegalIdentity({ brand }: { brand: Brand }) {
           </p>
         ) : null}
         <p className="mt-3 text-[0.9375rem]">
-          <a
-            href={`mailto:${brand.email}`}
-            className="text-accent-contrast underline decoration-line-strong decoration-1 underline-offset-4 transition-colors hover:decoration-accent"
-          >
+          <a href={`mailto:${brand.email}`} className={LINK_CLASS}>
             {brand.email}
           </a>
         </p>
       </address>
 
       <dl className="grid gap-x-10 gap-y-4 border-t border-line pt-6 @xl:grid-cols-[minmax(0,20rem)_1fr]">
-        {rows.map((row) => (
-          <div key={row.label} className="@xl:contents">
-            <dt className="text-[0.75rem] uppercase tracking-[0.1em] text-text-muted">
-              {row.label}
-            </dt>
-            <dd className="mt-1 text-[0.9375rem] text-text @xl:mt-0">{row.value}</dd>
-          </div>
-        ))}
+        {rows.map((row) => {
+          const isRegistry = row.value === brand.registryNumber
+          return (
+            <div key={row.label} className="@xl:contents">
+              <dt className="text-[0.75rem] uppercase tracking-[0.1em] text-text-muted">
+                {row.label}
+              </dt>
+              <dd className="mt-1 text-[0.9375rem] text-text @xl:mt-0">
+                {row.href ? (
+                  <a
+                    href={row.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={LINK_CLASS}
+                  >
+                    {row.value}
+                  </a>
+                ) : (
+                  row.value
+                )}
+                {registryLink && isRegistry ? <RegistryLink brand={brand} /> : null}
+              </dd>
+            </div>
+          )
+        })}
       </dl>
     </div>
   )

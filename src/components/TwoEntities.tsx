@@ -4,6 +4,49 @@ import { BRANDS, BRAND_KEYS, type BrandKey } from '@/brand/brands'
 import { useBrandSwitch } from '@/brand/useBrandSwitch'
 import { Container } from '@/components/ui/Container'
 
+const ACTION_CLASS =
+  'group inline-flex items-center gap-3 rounded-(--radius-md) border border-line-strong px-6 py-3.5 ' +
+  'text-[0.75rem] font-medium uppercase tracking-[0.12em] transition-colors duration-200 ' +
+  'hover:border-accent hover:text-accent-contrast disabled:opacity-55'
+
+/**
+ * Passer à l'autre société : un lien vers son domaine quand il en existe un qui sert le site,
+ * un bouton de bascule sur place sinon. Voir `useBrandSwitch`.
+ */
+function SwitchAction({
+  label,
+  href,
+  onSelect,
+  disabled,
+}: {
+  label: string
+  href: string | null
+  onSelect: () => void
+  disabled: boolean
+}) {
+  const inner = (
+    <>
+      <span>{label}</span>
+      <span
+        aria-hidden="true"
+        className="transition-transform duration-200 ease-(--ease-out-quart) group-hover:translate-x-1"
+      >
+        →
+      </span>
+    </>
+  )
+
+  return href ? (
+    <a href={href} className={ACTION_CLASS}>
+      {inner}
+    </a>
+  ) : (
+    <button type="button" onClick={onSelect} disabled={disabled} className={ACTION_CLASS}>
+      {inner}
+    </button>
+  )
+}
+
 /**
  * Présentation du groupe : les deux sociétés qui partagent ce site.
  *
@@ -14,12 +57,12 @@ import { Container } from '@/components/ui/Container'
  * mentions légales du pied de page, l'adresse de contact et le thème visuel.
  */
 export function TwoEntities({ active }: { active: BrandKey }) {
-  const { select, isPending, shown } = useBrandSwitch(active)
+  const { select, isPending, shown, redirects, hrefFor } = useBrandSwitch(active)
 
   return (
     <section className="border-y border-line bg-page py-16 sm:py-20 lg:py-(--spacing-section)">
       <Container>
-        <div className="mb-12 flex flex-col gap-5">
+        <div data-reveal className="mb-12 flex flex-col gap-5">
           <span aria-hidden="true" className="h-px w-14 bg-accent" />
           <h2 className="max-w-[34ch] text-[1.75rem] leading-[1.2] sm:text-[2.125rem]">
             Deux sociétés, une même approche du capital privé
@@ -31,12 +74,14 @@ export function TwoEntities({ active }: { active: BrandKey }) {
           </p>
         </div>
 
-        <ul className="grid gap-px sm:grid-cols-2">
+        {/* `data-names-both-entities` : cette section présente le groupe et nomme donc les
+            deux sociétés. Le contrôle de bascule la soustrait de son balayage. */}
+        <ul data-names-both-entities className="grid gap-px sm:grid-cols-2">
           {BRAND_KEYS.map((key) => {
             const brand = BRANDS[key]
             const isActive = key === shown
             return (
-              <li key={key}>
+              <li key={key} data-reveal data-reveal-delay={key === 'investments' ? 1 : 2}>
                 <article
                   aria-current={isActive ? 'true' : undefined}
                   className={`flex h-full flex-col gap-6 border-t p-7 transition-colors duration-200 sm:p-8 ${
@@ -81,20 +126,12 @@ export function TwoEntities({ active }: { active: BrandKey }) {
                         Vous consultez actuellement le site de cette société.
                       </p>
                     ) : (
-                      <button
-                        type="button"
-                        onClick={() => select(key)}
+                      <SwitchAction
+                        label={`Afficher ${brand.legalName}`}
+                        href={redirects ? hrefFor(key) : null}
+                        onSelect={() => select(key)}
                         disabled={isPending}
-                        className="group inline-flex items-center gap-3 rounded-(--radius-md) border border-line-strong px-6 py-3.5 text-[0.75rem] font-medium uppercase tracking-[0.12em] transition-colors duration-200 hover:border-accent hover:text-accent-contrast disabled:opacity-55"
-                      >
-                        <span>Afficher {brand.distinctive}</span>
-                        <span
-                          aria-hidden="true"
-                          className="transition-transform duration-200 ease-(--ease-out-quart) group-hover:translate-x-1"
-                        >
-                          →
-                        </span>
-                      </button>
+                      />
                     )}
                   </div>
                 </article>

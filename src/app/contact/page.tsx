@@ -1,11 +1,19 @@
 import type { Metadata } from 'next'
 
-import image from '@/assets/images/contact.png'
+import image from '@/assets/images/contact.webp'
 import { getBrand } from '@/brand/resolve'
 import { LegalIdentity } from '@/components/LegalIdentity'
 import { PageHero } from '@/components/PageHero'
+import { BandeauImage } from '@/components/media/ParallaxeMedia'
 import { ProjectEnquiryForm } from '@/components/ProjectEnquiryForm'
 import { Container } from '@/components/ui/Container'
+import { IMAGES_FICHES } from '@/content/fr/fiche-images'
+
+/** Vue aérienne d'une ville suisse, pour fermer la page sans rien ajouter au propos. */
+const BANDEAU =
+  IMAGES_FICHES['financement-immobilier']?.find(
+    (i) => i.fichier === 'financement-immobilier-4.webp',
+  ) ?? null
 
 export async function generateMetadata(): Promise<Metadata> {
   const brand = await getBrand()
@@ -62,7 +70,7 @@ export default async function ContactPage() {
 
             <aside className="lg:border-l lg:border-line lg:pl-12">
               <h2 className="mb-8 text-[1.25rem] leading-snug">Coordonnées</h2>
-              <LegalIdentity brand={brand} />
+              <LegalIdentity brand={brand} registryLink />
 
               <div className="mt-10 border-t border-line pt-8">
                 <h3 className="mb-3 text-[1.0625rem]">Déroulement</h3>
@@ -85,6 +93,8 @@ export default async function ContactPage() {
           </div>
         </Container>
       </section>
+
+      {BANDEAU ? <BandeauImage image={BANDEAU} hauteur="basse" /> : null}
     </>
   )
 }

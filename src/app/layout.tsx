@@ -9,6 +9,8 @@ import {
   GoogleTagManagerScript,
 } from '@/components/GoogleTagManager'
 import { Header } from '@/components/Header'
+import { CursorGlow } from '@/components/CursorGlow'
+import { MotionLayer } from '@/components/MotionLayer'
 import { MAIN_NAV } from '@/config/navigation'
 
 import './globals.css'
@@ -83,6 +85,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <GoogleTagManagerNoScript />
 
         {COPY_GUARD ? <CopyGuard /> : null}
+
+        <MotionLayer />
+        <CursorGlow />
 
         <a
           href="#contenu"

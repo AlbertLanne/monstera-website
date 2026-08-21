@@ -1,6 +1,9 @@
 import { resolveBrandText, type Brand } from '@/brand/brands'
 import { BlockRenderer, type Tone } from '@/components/blocks/BlockRenderer'
+import { planifierImages } from '@/components/media/plan-images'
+import { RangeeAlternee } from '@/components/media/RangeeAlternee'
 import { Container } from '@/components/ui/Container'
+import type { ImageFiche } from '@/content/fr/fiche-images'
 import type { Block, PageContent, Section } from '@/content/fr/types'
 
 /**
@@ -54,21 +57,24 @@ function SectionHeading({
   title,
   tone,
   brand,
+  etroit = false,
 }: {
   title: string
   tone: Tone
   brand: Brand
+  /** Dans une rangée, le titre dispose d'une demi-page : il descend d'un cran dans l'échelle. */
+  etroit?: boolean
 }) {
   return (
-    <div className="mb-10 flex flex-col gap-5">
+    <div data-reveal className="mb-8 flex flex-col gap-5 sm:mb-10">
       <span
         aria-hidden="true"
         className={`h-px w-14 ${tone === 'band' ? 'bg-band-accent' : 'bg-accent'}`}
       />
       <h2
-        className={`max-w-[36ch] text-[1.75rem] leading-[1.2] sm:text-[2.125rem] ${
-          tone === 'band' ? 'text-band-text' : 'text-text-strong'
-        }`}
+        className={`max-w-[36ch] leading-[1.2] ${
+          etroit ? 'text-[1.625rem] sm:text-[1.875rem]' : 'text-[1.75rem] sm:text-[2.125rem]'
+        } ${tone === 'band' ? 'text-band-text' : 'text-text-strong'}`}
       >
         {resolveBrandText(title, brand)}
       </h2>
@@ -92,6 +98,8 @@ function SectionBlocks({
       {section.blocks.map((block, index) => (
         <div
           key={index}
+          data-reveal
+          data-reveal-delay={Math.min(index, 3)}
           className={WIDE.includes(block.type) ? '' : 'max-w-(--container-prose)'}
         >
           <BlockRenderer block={block} brand={brand} tone={tone} ctaHref={ctaHref} />
@@ -121,7 +129,7 @@ function CompactBody({
       <Container width="prose">
         <div className="space-y-12">
           {page.sections.map((section, index) => (
-            <div key={index} className="space-y-5">
+            <div key={index} data-reveal className="space-y-5">
               {section.title && !sameHeading(section.title, page.title) ? (
                 <h2 className="text-[1.25rem] leading-snug sm:text-[1.375rem]">
                   {resolveBrandText(section.title, brand)}
@@ -145,7 +153,22 @@ function CompactBody({
 }
 
 /**
+ * Une section peut-elle se mettre en rangée à côté d'une photographie ?
+ *
+ * Non pour le bandeau d'appel à l'action, qui tient toute la largeur par construction, et non
+ * pour les sections denses — une grille de critères ou un processus numéroté repliés dans une
+ * demi-page deviennent illisibles. Le texte courant, lui, s'accommode très bien d'une colonne.
+ */
+function peutPorterUneImage(section: Section, tone: Tone) {
+  return tone !== 'band' && !section.blocks.some((block) => WIDE.includes(block.type))
+}
+
+/**
  * Rend une fiche de contenu client en sections mises en page.
+ *
+ * Chaque section illustrable devient une rangée « paragraphe d'un côté, photographie de
+ * l'autre », les côtés alternant d'une rangée à la suivante. Les sections denses et le bandeau
+ * final gardent la pleine largeur : elles en ont besoin, et elles font respirer l'alternance.
  *
  * Un intertitre identique au titre de la page est ignoré : le cas se présente sur la fiche
  * Notre Équipe, dont le .odt ouvre sur un H2 homonyme.
@@ -155,33 +178,63 @@ export function PageBody({
   brand,
   ctaHref = '/contact',
   compact = false,
+  images = [],
 }: {
   page: PageContent
   brand: Brand
   ctaHref?: string
   /** Colonne continue plutôt que sections pleine largeur. Pour les pages juridiques. */
   compact?: boolean
+  /** Images à répartir entre les sections. Voir `plan-images.ts`. */
+  images?: ImageFiche[]
 }) {
   if (compact) return <CompactBody page={page} brand={brand} ctaHref={ctaHref} />
 
   const sections = page.sections
   const tones = planTones(sections)
+  const rangees = planifierImages(
+    sections.map((section, index) => peutPorterUneImage(section, tones[index])),
+    images,
+  )
 
   return (
     <>
       {sections.map((section, index) => {
         const tone = tones[index]
         const skipTitle = section.title !== null && sameHeading(section.title, page.title)
+        const rangee = rangees.get(index)
+        const titre =
+          section.title && !skipTitle ? (
+            <SectionHeading
+              title={section.title}
+              tone={tone}
+              brand={brand}
+              etroit={Boolean(rangee)}
+            />
+          ) : null
+        const blocs = (
+          <SectionBlocks section={section} brand={brand} tone={tone} ctaHref={ctaHref} />
+        )
+
+        if (rangee) {
+          return (
+            <section key={index} className={sectionBackground(section, tone)}>
+              <RangeeAlternee image={rangee.image} cote={rangee.cote}>
+                {titre}
+                {blocs}
+              </RangeeAlternee>
+            </section>
+          )
+        }
+
         return (
           <section
             key={index}
             className={`py-16 sm:py-20 lg:py-(--spacing-section) ${sectionBackground(section, tone)}`}
           >
             <Container>
-              {section.title && !skipTitle ? (
-                <SectionHeading title={section.title} tone={tone} brand={brand} />
-              ) : null}
-              <SectionBlocks section={section} brand={brand} tone={tone} ctaHref={ctaHref} />
+              {titre}
+              {blocs}
             </Container>
           </section>
         )

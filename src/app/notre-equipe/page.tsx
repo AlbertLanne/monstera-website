@@ -1,12 +1,16 @@
 import type { Metadata } from 'next'
 
-import image from '@/assets/images/equipe.png'
+import image from '@/assets/images/equipe.webp'
 import { ContentPage, contentMetadata } from '@/components/ContentPage'
+import { BandeauImage } from '@/components/media/ParallaxeMedia'
 import { RelatedLinks } from '@/components/RelatedLinks'
+import { imagesDeCorps } from '@/config/images-pages'
 
 export function generateMetadata(): Promise<Metadata> {
   return contentMetadata('notre-equipe')
 }
+
+const BANDEAU = imagesDeCorps('notre-equipe')[0] ?? null
 
 /**
  * La grille des partenaires a été retirée du contenu généré.
@@ -25,6 +29,11 @@ export default function NotreEquipePage() {
         image={image}
         imageAlt="Vue sur une ville suisse depuis une terrasse en hauteur"
       />
+      {/* La fiche n'a plus de section depuis le retrait de la grille des partenaires : aucune
+          rangée texte–image n'est possible ici. Un seul bandeau ferme la page — une suite de
+          photographies sans texte en face ne serait qu'un paquet d'images. */}
+      {BANDEAU ? <BandeauImage image={BANDEAU} hauteur="moyenne" /> : null}
+
       <RelatedLinks
         title="Poursuivre"
         slugs={[

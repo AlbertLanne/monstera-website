@@ -29,6 +29,8 @@ export type Brand = {
   distinctive: string
   /** Numéro au registre du commerce genevois. */
   registryNumber: string
+  /** Fiche publique de l'entité au registre, pour que le visiteur puisse vérifier lui-même. */
+  registryUrl: string
   /** Numéro d'identification des entreprises. */
   uid: string | null
   address: PostalAddress | null
@@ -60,6 +62,7 @@ export const BRANDS: Record<BrandKey, Brand> = {
     legalName: 'Argentum Investments SA',
     distinctive: 'Investments',
     registryNumber: 'CH-660.0.244.019-9',
+    registryUrl: 'https://www.moneyhouse.ch/en/company/argentum-investments-sa-4141745391',
     uid: 'CHE-134.341.014',
     address: GENEVA_ADDRESS,
     sector: 'Exploitation de sociétés d’investissement',
@@ -76,6 +79,7 @@ export const BRANDS: Record<BrandKey, Brand> = {
     legalName: 'Argentum Advisors SA',
     distinctive: 'Advisors',
     registryNumber: 'CH-660.0.242.019-2',
+    registryUrl: 'https://www.moneyhouse.ch/de/company/argentum-advisors-sa-20144934951',
     // Non communiqués par le client — voir la liste des données manquantes dans CLAUDE.md.
     uid: null,
     address: null,
@@ -113,8 +117,41 @@ export function brandFromHost(host: string | null | undefined): BrandKey | null 
   return null
 }
 
+/**
+ * L'entité d'un vrai domaine Argentum, et rien d'autre.
+ *
+ * `brandFromHost` reconnaît large — il accepte une préproduction nommée `advisors.vercel.app`.
+ * C'est ce qu'on veut pour choisir l'entité d'ouverture, mais pas pour décider qui fait autorité :
+ * sur un vrai domaine le nom d'hôte prime sur le cookie et la bascule devient une redirection,
+ * alors qu'en démonstration locale elle reste instantanée. Les deux comportements se distinguent
+ * ici, sur une correspondance exacte de domaine enregistré, `www.` compris.
+ */
+export function strictBrandFromHost(host: string | null | undefined): BrandKey | null {
+  if (!host) return null
+  // Le port n'appartient pas au domaine : `argentum-advisors.ch:3000` reste le domaine réel.
+  const hostname = host.toLowerCase().split(':')[0].replace(/\.$/, '')
+  for (const key of BRAND_KEYS) {
+    const domain = BRANDS[key].domain
+    if (hostname === domain || hostname.endsWith(`.${domain}`)) return key
+  }
+  return null
+}
+
 export function otherBrand(key: BrandKey): BrandKey {
   return key === 'investments' ? 'advisors' : 'investments'
+}
+
+/**
+ * Découpe la raison sociale en deux lignes pour le sélecteur d'entité.
+ *
+ * Le sélecteur affiche la raison sociale complète, pas le seul mot distinctif : « Investments »
+ * ne désigne aucune société. Sur deux lignes, les deux boutons tiennent dans l'en-tête sans
+ * écraser la navigation. Le découpage part de `legalName` et jamais d'un « Argentum » écrit en
+ * dur — une raison sociale ne se recompose pas à la main.
+ */
+export function splitLegalName(brand: Brand): [string, string] {
+  const [first, ...rest] = brand.legalName.split(' ')
+  return rest.length > 0 ? [first, rest.join(' ')] : [brand.legalName, '']
 }
 
 /** Remplace le jeton %BRAND% du contenu client par la raison sociale de l'entité active. */

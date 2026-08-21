@@ -1,14 +1,16 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
 
-import image from '@/assets/images/finance.png'
-import { resolveBrandText } from '@/brand/brands'
+import image from '@/assets/images/finance.webp'
+import { resolveBrandText, type Brand } from '@/brand/brands'
 import { getBrand } from '@/brand/resolve'
 import { PageHero } from '@/components/PageHero'
 import { Button } from '@/components/ui/Button'
 import { Container } from '@/components/ui/Container'
+import { RangeeAlternee } from '@/components/media/RangeeAlternee'
+import { vignetteFinance } from '@/config/images-pages'
 import { FINANCE_LINKS } from '@/config/navigation'
 import { getPage } from '@/content/fr'
+import type { PageContent } from '@/content/fr/types'
 
 export async function generateMetadata(): Promise<Metadata> {
   const brand = await getBrand()
@@ -23,11 +25,28 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /**
+ * La première phrase de la fiche.
+ *
+ * Le chapeau (`lead`) est vide sur la plupart des dix fiches — le client y ouvre directement par
+ * un intertitre. On reprend alors le premier paragraphe de la première section, qui suit
+ * immédiatement l'accroche : c'est le même texte, dans le même ordre, sans rien ajouter.
+ */
+function premierParagraphe(page: PageContent): string | null {
+  if (page.lead[0]) return page.lead[0]
+  const bloc = page.sections[0]?.blocks.find((b) => b.type === 'prose')
+  return bloc?.paragraphs[0] ?? null
+}
+
+/**
  * Sommaire des dix domaines d'investissement.
  *
- * Le client n'a pas livré de fiche pour cette page : chaque carte reprend donc le sous-titre et
- * la première phrase de la fiche correspondante, sans texte ajouté. L'ordre est celui du
- * sous-menu, classé par priorité commerciale décroissante.
+ * Le client n'a pas livré de fiche pour cette page : chaque domaine reprend le sous-titre et la
+ * première phrase de la fiche correspondante, sans texte ajouté. L'ordre est celui du sous-menu,
+ * classé par priorité commerciale décroissante — c'est ce que la numérotation donne à lire.
+ *
+ * La mise en page est celle des fiches : une rangée par domaine, texte d'un côté, photographie
+ * de l'autre, les côtés alternant. Chaque domaine montre donc une image de son propre dossier,
+ * au lieu du paquet d'images qui fermait la page auparavant.
  */
 export default async function FinancePage() {
   const brand = await getBrand()
@@ -39,7 +58,8 @@ export default async function FinancePage() {
       label: link.label,
       /** Le premier intertitre de la fiche fait office d'accroche. */
       claim: page.sections[0]?.title ?? null,
-      summary: page.lead[0] ?? null,
+      summary: premierParagraphe(page),
+      vignette: vignetteFinance(link.content!),
     }
   })
 
@@ -58,43 +78,22 @@ export default async function FinancePage() {
         imageAlt="Le massif du Salève au-dessus du bassin genevois"
       />
 
-      <section className="bg-page py-16 sm:py-20 lg:py-(--spacing-section)">
-        <Container>
-          <ul className="grid gap-px sm:grid-cols-2 lg:grid-cols-3">
-            {domains.map((domain, index) => (
-              <li key={domain.href}>
-                <Link
-                  href={domain.href}
-                  className="group flex h-full flex-col gap-4 border-t border-line p-7 transition-colors duration-200 hover:border-accent hover:bg-page-alt"
-                >
-                  <span className="font-(family-name:--font-display) text-[0.875rem] tabular-nums text-accent-contrast">
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
-                  <h2 className="font-(family-name:--font-display) text-[1.3125rem] leading-snug">
-                    {domain.label}
-                  </h2>
-                  {domain.claim ? (
-                    <p className="text-[0.9375rem] leading-snug text-text">
-                      {resolveBrandText(domain.claim, brand)}
-                    </p>
-                  ) : null}
-                  {domain.summary ? (
-                    <p className="line-clamp-4 text-[0.875rem] leading-[1.7] text-text-muted">
-                      {resolveBrandText(domain.summary, brand)}
-                    </p>
-                  ) : null}
-                  <span
-                    aria-hidden="true"
-                    className="mt-auto pt-3 text-[0.8125rem] text-text-muted transition-transform duration-200 ease-(--ease-out-quart) group-hover:translate-x-1 group-hover:text-accent-contrast"
-                  >
-                    Découvrir →
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Container>
-      </section>
+      <ol className="bg-page">
+        {domains.map((domain, index) =>
+          domain.vignette ? (
+            <li key={domain.href} className="border-t border-line">
+              <RangeeAlternee
+                image={domain.vignette}
+                cote={index % 2 === 0 ? 'droite' : 'gauche'}
+                href={domain.href}
+                densite="compacte"
+              >
+                <DomaineTexte domain={domain} numero={index + 1} brand={brand} />
+              </RangeeAlternee>
+            </li>
+          ) : null,
+        )}
+      </ol>
 
       <section className="bg-band py-16 text-band-text sm:py-20">
         <Container>
@@ -120,5 +119,50 @@ export default async function FinancePage() {
         </Container>
       </section>
     </>
+  )
+}
+
+type Domaine = {
+  label: string
+  claim: string | null
+  summary: string | null
+}
+
+/** Le contenu d'une rangée du sommaire. Le titre est un `h2` : la page est une liste de domaines. */
+function DomaineTexte({
+  domain,
+  numero,
+  brand,
+}: {
+  domain: Domaine
+  numero: number
+  brand: Brand
+}) {
+  return (
+    <div className="flex flex-col gap-4">
+      <span className="font-(family-name:--font-display) text-[0.875rem] tabular-nums text-accent-contrast">
+        {String(numero).padStart(2, '0')}
+      </span>
+      <h2 className="font-(family-name:--font-display) text-[1.625rem] leading-[1.2] text-text-strong sm:text-[1.875rem]">
+        {domain.label}
+      </h2>
+      {domain.claim ? (
+        <p className="max-w-[42ch] text-[1.0625rem] leading-snug text-text">
+          {resolveBrandText(domain.claim, brand)}
+        </p>
+      ) : null}
+      {domain.summary ? (
+        <p className="line-clamp-3 text-[0.9375rem] leading-[1.7] text-text-muted">
+          {resolveBrandText(domain.summary, brand)}
+        </p>
+      ) : null}
+      <span
+        aria-hidden="true"
+        className="mt-2 inline-flex items-center gap-3 text-[0.8125rem] text-text-muted transition-colors duration-200 group-hover:text-accent-contrast"
+      >
+        Découvrir
+        <span className="h-px w-8 bg-current transition-all duration-300 ease-(--ease-out-quart) group-hover:w-14" />
+      </span>
+    </div>
   )
 }
