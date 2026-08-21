@@ -16,13 +16,16 @@
     "test:watch": "vitest",
     "content:spec": "python3 scripts/gen_site_spec.py",
     "email:test": "node --env-file-if-exists=.env.local scripts/check-smtp.mjs",
-    "check:delivery": "node scripts/check-form-delivery.mjs"
+    "check:delivery": "node scripts/check-form-delivery.mjs",
+    "images:build": "node scripts/gen_fiche_images.mjs",
+    "logos:build": "python3 scripts/gen_logos.py"
   },
   "dependencies": {
     "next": "16.3.1",
     "nodemailer": "^9.0.5",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "three": "^0.185.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -31,6 +34,7 @@
     "@types/nodemailer": "^8.0.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.185.4",
     "eslint": "^9",
     "eslint-config-next": "16.3.1",
     "playwright": "^1.62.1",

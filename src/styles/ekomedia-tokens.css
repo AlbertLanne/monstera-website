@@ -75,14 +75,33 @@
   --accent: var(--color-sky);
   --accent-contrast: var(--color-royal);
 
-  --border: rgb(13 27 61 / 0.12);
-  --border-strong: rgb(13 27 61 / 0.24);
+  /* Filets teintés royal plutôt que navy neutre : sur fond blanc, c'est la marque qui dessine
+     la structure de la page. */
+  --border: rgb(30 58 138 / 0.16);
+  --border-strong: rgb(30 58 138 / 0.32);
 
-  /* Bandeau à contraste inversé, utilisé une à deux fois par page. */
-  --band-bg: var(--color-navy-900);
+  /* Bandeau à contraste inversé, utilisé une à deux fois par page. Le ton le plus sombre de
+     l'échelle : c'est le seul endroit où Investments va aussi loin qu'Advisors. */
+  --band-bg: var(--color-navy-950);
   --band-text: var(--color-white);
   --band-muted: var(--color-navy-200);
   --band-accent: var(--color-sky);
+
+  /* Barre de navigation. Décision client du 20 août 2026 : l'en-tête blanc a été refusé, jugé
+     monocouleur. Le dégradé traverse trois des quatre couleurs de la charte — du navy le plus
+     profond au royal — et le filet du bas est en ciel. Aucune teinte nouvelle n'est introduite :
+     l'arbitrage sur la palette tient toujours. */
+  --header-bg: linear-gradient(100deg, #081228 0%, #142a5c 52%, var(--color-royal) 100%);
+  --header-line: rgb(111 168 255 / 0.45);
+  /* Panneau déroulant et tiroir mobile : un aplat, pas le dégradé. Une liste de liens posée sur
+     un dégradé se lit mal, la valeur du fond changeant d'une ligne à l'autre. */
+  --menu-bg: var(--color-navy-900);
+  --menu-line: rgb(111 168 255 / 0.18);
+
+  /* Voile des images de contenu : une teinte de marque, pas un assombrissement. Le voile du
+     hero est calibré pour qu'un titre blanc tienne dessus ; appliqué à un bandeau décoratif il
+     éteint la photographie. */
+  --overlay-media: linear-gradient(180deg, rgb(13 27 61 / 0.06) 0%, rgb(13 27 61 / 0.14) 100%);
 
   /* La séquence fournie par le client traverse des plans très clairs (ciel, drapeau suisse) :
      le voile doit rester assez dense pour qu'un titre blanc tienne sur toute la durée. */
@@ -97,10 +116,12 @@
 }
 
 [data-brand='advisors'] {
-  --page-bg: var(--color-navy-900);
-  --page-bg-alt: var(--color-navy-950);
+  /* Le fond descend au ton le plus sombre de l'échelle et les surfaces remontent : l'écart
+     entre les deux entités se creuse par la profondeur du fond, pas par une teinte nouvelle. */
+  --page-bg: var(--color-navy-950);
+  --page-bg-alt: #0a1631;
   --surface: #122448;
-  --surface-raised: #16294f;
+  --surface-raised: var(--color-navy-800);
 
   --text: var(--color-white);
   --text-strong: var(--color-white);
@@ -113,13 +134,23 @@
   --accent: var(--color-sky);
   --accent-contrast: var(--color-sky);
 
-  --border: rgb(111 168 255 / 0.2);
-  --border-strong: rgb(111 168 255 / 0.4);
+  --border: rgb(111 168 255 / 0.26);
+  --border-strong: rgb(111 168 255 / 0.52);
 
   --band-bg: var(--color-white);
   --band-text: var(--color-navy-900);
   --band-muted: var(--color-navy-500);
   --band-accent: var(--color-royal);
+
+  /* La barre part d'un cran plus bas que chez Investments et arrive au même royal : les deux
+     entités partagent la famille, Advisors la joue plus profonde — la règle du reste du site. */
+  --header-bg: linear-gradient(100deg, #050c1c 0%, var(--color-navy-900) 52%, var(--color-royal) 100%);
+  --header-line: rgb(111 168 255 / 0.5);
+  --menu-bg: #081228;
+  --menu-line: rgb(111 168 255 / 0.22);
+
+  /* Sur fond navy, une photographie en pleine lumière fait trou : le voile est plus dense. */
+  --overlay-media: linear-gradient(180deg, rgb(5 12 28 / 0.3) 0%, rgb(5 12 28 / 0.45) 100%);
 
   --overlay-video: linear-gradient(
     180deg,
@@ -151,4 +182,7 @@
   --color-band-text: var(--band-text);
   --color-band-muted: var(--band-muted);
   --color-band-accent: var(--band-accent);
+  --color-menu: var(--menu-bg);
+  --color-menu-line: var(--menu-line);
+  --color-header-line: var(--header-line);
 }

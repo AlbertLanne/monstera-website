@@ -7,6 +7,8 @@ import {
   isBrandKey,
   otherBrand,
   resolveBrandText,
+  splitLegalName,
+  strictBrandFromHost,
 } from './brands'
 
 /**
@@ -102,5 +104,79 @@ describe('otherBrand', () => {
   it('renvoie toujours l’autre entité', () => {
     expect(otherBrand('investments')).toBe('advisors')
     expect(otherBrand('advisors')).toBe('investments')
+  })
+})
+
+describe('strictBrandFromHost', () => {
+  /**
+   * Cette fonction décide de deux choses à la fois : qui fait autorité côté serveur — le domaine
+   * ou le cookie — et si le sélecteur redirige ou bascule sur place. Un faux positif sur
+   * `localhost` casserait la démonstration au clic ; un faux négatif sur le domaine de
+   * production ferait afficher Advisors sur argentum-investments.ch.
+   */
+  it('reconnaît les deux domaines de production', () => {
+    expect(strictBrandFromHost('argentum-investments.ch')).toBe('investments')
+    expect(strictBrandFromHost('argentum-advisors.ch')).toBe('advisors')
+  })
+
+  it('accepte le sous-domaine www et le port', () => {
+    expect(strictBrandFromHost('www.argentum-advisors.ch')).toBe('advisors')
+    expect(strictBrandFromHost('argentum-investments.ch:3000')).toBe('investments')
+    expect(strictBrandFromHost('ARGENTUM-ADVISORS.CH')).toBe('advisors')
+  })
+
+  it('ne reconnaît ni localhost ni une préproduction', () => {
+    for (const host of [
+      'localhost',
+      'localhost:3000',
+      '127.0.0.1:3000',
+      'advisors.vercel.app',
+      'albertlanne.github.io',
+    ]) {
+      expect(strictBrandFromHost(host)).toBeNull()
+    }
+  })
+
+  it('refuse un domaine qui contient le nôtre sans être le nôtre', () => {
+    // `brandFromHost` accepte large et c'est voulu ; celle-ci ne le doit pas.
+    expect(strictBrandFromHost('argentum-investments.ch.exemple.com')).toBeNull()
+    expect(brandFromHost('argentum-investments.ch.exemple.com')).toBe('investments')
+  })
+
+  it('renvoie null sur une valeur absente', () => {
+    expect(strictBrandFromHost(null)).toBeNull()
+    expect(strictBrandFromHost(undefined)).toBeNull()
+    expect(strictBrandFromHost('')).toBeNull()
+  })
+})
+
+describe('splitLegalName', () => {
+  it('recompose exactement la raison sociale', () => {
+    // Le sélecteur affiche ces deux morceaux l'un sous l'autre : leur concaténation doit rendre
+    // la raison sociale au caractère près.
+    for (const key of BRAND_KEYS) {
+      const [prefix, rest] = splitLegalName(BRANDS[key])
+      expect(`${prefix} ${rest}`).toBe(BRANDS[key].legalName)
+    }
+  })
+
+  it('sépare le nom de groupe du nom d’entité', () => {
+    expect(splitLegalName(BRANDS.investments)).toEqual(['Argentum', 'Investments SA'])
+    expect(splitLegalName(BRANDS.advisors)).toEqual(['Argentum', 'Advisors SA'])
+  })
+})
+
+describe('fiches au registre du commerce', () => {
+  it('donne à chaque entité sa propre fiche publique en HTTPS', () => {
+    const urls = BRAND_KEYS.map((key) => BRANDS[key].registryUrl)
+    expect(new Set(urls).size).toBe(urls.length)
+    for (const url of urls) expect(url.startsWith('https://')).toBe(true)
+  })
+
+  it('fait pointer chaque fiche sur la bonne société', () => {
+    // Une inversion ici enverrait le visiteur vérifier l'autre société — exactement l'inverse
+    // de ce que le lien promet.
+    expect(BRANDS.investments.registryUrl).toContain('argentum-investments-sa')
+    expect(BRANDS.advisors.registryUrl).toContain('argentum-advisors-sa')
   })
 })

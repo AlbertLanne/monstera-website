@@ -34,18 +34,21 @@ export function PageHero({
   return (
     <section
       className={`relative isolate overflow-hidden ${
-        onImage ? 'on-dark' : 'border-b border-line bg-page-alt'
+        onImage ? '' : 'border-b border-line bg-page-alt'
       }`}
     >
       {image ? (
         <>
+          {/* La parallaxe porte sur l'image, pas sur le voile : le voile doit couvrir la
+              section entière quelle que soit la position de la photographie. */}
           <Image
             src={image}
             alt={imageAlt ?? ''}
             priority
             sizes="100vw"
             placeholder="blur"
-            className="absolute inset-0 -z-10 h-full w-full object-cover"
+            data-parallax="7"
+            className="brand-media absolute inset-0 -z-10 h-full w-full object-cover"
           />
           <div className="absolute inset-0 -z-10 bg-(image:--overlay-video)" />
         </>
@@ -60,7 +63,7 @@ export function PageHero({
               }`
         }
       >
-        <div className="flex flex-col gap-6">
+        <div data-reveal className="flex flex-col gap-6">
           <div className="flex items-center gap-4">
             <span
               aria-hidden="true"

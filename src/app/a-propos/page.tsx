@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 
-import image from '@/assets/images/a-propos.png'
+import image from '@/assets/images/a-propos.webp'
 import { ContentPage, contentMetadata } from '@/components/ContentPage'
 
 export function generateMetadata(): Promise<Metadata> {

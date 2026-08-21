@@ -48,7 +48,9 @@ export function Footer({ brand }: { brand: Brand }) {
       <Container className="py-16 sm:py-20">
         <div className="grid gap-12 lg:grid-cols-[1.15fr_2fr]">
           <div>
-            <Logo />
+            {/* Le pied de page est sur `--page-bg-alt` : clair chez Investments, navy chez
+                Advisors. La signature suit, sinon elle disparaît dans l'un des deux. */}
+            <Logo brand={brand.key} fond={brand.theme === 'dark' ? 'sombre' : 'clair'} />
             <p className="mt-6 max-w-[32ch] text-[0.9375rem] leading-[1.7] text-text-muted">
               {brand.tagline}
             </p>

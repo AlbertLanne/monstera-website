@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Outillage installé par `npx impeccable install` : code tiers, pas le nôtre.
+    ".github/skills/**",
+    ".github/agents/**",
   ]),
 ]);
 

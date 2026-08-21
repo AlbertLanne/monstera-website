@@ -6,6 +6,7 @@ import {
   DEFAULT_BRAND,
   brandFromHost,
   isBrandKey,
+  strictBrandFromHost,
   type Brand,
   type BrandKey,
 } from './brands'
@@ -13,12 +14,6 @@ import {
 /** En-tête posé par `src/proxy.ts` : l'entité déduite du nom d'hôte de la requête. */
 export const BRAND_HEADER = 'x-argentum-brand'
 
-/**
- * Détermine l'entité active côté serveur.
- *
- * Priorité : bascule manuelle du visiteur (cookie) > nom de domaine > Investments.
- * Le cookie l'emporte pour que le bouton de bascule fonctionne sur les deux domaines.
- */
 /**
  * Entité figée au moment de la construction, pour l'export statique.
  *
@@ -28,18 +23,35 @@ export const BRAND_HEADER = 'x-argentum-brand'
  */
 const MARQUE_FIGEE = process.env.NEXT_PUBLIC_MARQUE_STATIQUE
 
+/**
+ * Détermine l'entité active côté serveur.
+ *
+ * Priorité : domaine Argentum réel > bascule manuelle du visiteur (cookie) > nom d'hôte
+ * approchant > Investments.
+ *
+ * Le domaine réel passe devant le cookie depuis que la bascule y est devenue une redirection :
+ * une fois sur argentum-advisors.ch, le visiteur doit voir Advisors, même s'il avait cliqué
+ * Investments plus tôt sur l'autre domaine. Hors de ces deux domaines — localhost, préproduction —
+ * aucun hôte ne fait autorité et le cookie reprend son rôle, ce qui garde la bascule au clic
+ * pour la démonstration.
+ */
 export async function getBrandKey(): Promise<BrandKey> {
   if (isBrandKey(MARQUE_FIGEE)) return MARQUE_FIGEE
+
+  const headerStore = await headers()
+  const host = headerStore.get('host')
+
+  const authoritative = strictBrandFromHost(host)
+  if (authoritative) return authoritative
 
   const cookieStore = await cookies()
   const chosen = cookieStore.get(BRAND_COOKIE)?.value
   if (isBrandKey(chosen)) return chosen
 
-  const headerStore = await headers()
   const fromProxy = headerStore.get(BRAND_HEADER)
   if (isBrandKey(fromProxy)) return fromProxy
 
-  return brandFromHost(headerStore.get('host')) ?? DEFAULT_BRAND
+  return brandFromHost(host) ?? DEFAULT_BRAND
 }
 
 export async function getBrand(): Promise<Brand> {

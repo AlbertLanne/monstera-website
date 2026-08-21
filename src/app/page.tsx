@@ -7,6 +7,7 @@ import { PageBody } from '@/components/PageBody'
 import { TwoEntities } from '@/components/TwoEntities'
 import { Button } from '@/components/ui/Button'
 import { Container } from '@/components/ui/Container'
+import { imagesDeCorps } from '@/config/images-pages'
 import { getPage } from '@/content/fr'
 
 /**
@@ -39,8 +40,8 @@ export default async function HomePage() {
       <section className="relative isolate flex min-h-[38rem] items-end overflow-hidden sm:min-h-[44rem] lg:min-h-[calc(100dvh-2rem)]">
         <HeroVideo />
 
-        <Container className="on-dark relative pt-[calc(var(--header-h)+5rem)] pb-20 sm:pb-28">
-          <div className="flex flex-col gap-7">
+        <Container className="relative pt-[calc(var(--header-h)+5rem)] pb-20 sm:pb-28">
+          <div data-reveal className="flex flex-col gap-7">
             <div className="flex items-center gap-4">
               <span aria-hidden="true" className="h-px w-14 bg-white/70" />
               <span className="text-[0.6875rem] uppercase tracking-[0.16em] text-white/80">
@@ -77,8 +78,13 @@ export default async function HomePage() {
       <section className="border-b border-line bg-page-alt py-12 sm:py-14">
         <Container>
           <dl className="grid gap-10 sm:grid-cols-3">
-            {KEY_FIGURES.map((figure) => (
-              <div key={figure.value} className="flex flex-col gap-2">
+            {KEY_FIGURES.map((figure, index) => (
+              <div
+                key={figure.value}
+                data-reveal
+                data-reveal-delay={index + 1}
+                className="flex flex-col gap-2"
+              >
                 <dt className="font-(family-name:--font-display) text-[2.25rem] leading-none text-text-strong sm:text-[2.75rem]">
                   {figure.value}
                 </dt>
@@ -93,7 +99,7 @@ export default async function HomePage() {
 
       <TwoEntities active={brand.key} />
 
-      <PageBody page={page} brand={brand} />
+      <PageBody page={page} brand={brand} images={imagesDeCorps('accueil')} />
     </>
   )
 }
