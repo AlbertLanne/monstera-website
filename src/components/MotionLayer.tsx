@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 /**
  * Délai au bout duquel on vérifie que l'observateur a bien donné signe de vie. S'il n'a rien
@@ -12,6 +12,24 @@ import { useEffect } from 'react'
  * ce qui neutralisait l'apparition au défilement dès la seconde et demie.
  */
 const FILET_DE_SECURITE_MS = 1500
+
+/**
+ * Sélecteur des éléments à révéler.
+ *
+ * `[data-mots]` rejoint `[data-reveal]` : un titre découpé mot à mot est observé comme un bloc,
+ * mais c'est le CSS qui décide si ce sont ses mots ou lui-même qui entrent. L'observateur ne
+ * connaît pas l'effet, seulement le moment.
+ */
+const A_REVELER = '[data-reveal]:not([data-revealed]), [data-mots]:not([data-revealed])'
+
+/**
+ * Événement qui redemande une entrée sur tout ce qui est à l'écran.
+ *
+ * Sans lui, changer de régime d'intensité ne montrerait rien : les blocs visibles sont déjà
+ * révélés, et il faudrait faire défiler la page pour en croiser un neuf. Le contrôle de la page
+ * de démonstration l'émet à chaque changement.
+ */
+export const EVENEMENT_REJEU = 'argentum:rejouer-mouvement'
 
 /**
  * Apparition des blocs au défilement et parallaxe des images.
@@ -25,6 +43,13 @@ const FILET_DE_SECURITE_MS = 1500
  */
 export function MotionLayer() {
   const pathname = usePathname()
+  const [rejeu, setRejeu] = useState(0)
+
+  useEffect(() => {
+    const redemander = () => setRejeu((n) => n + 1)
+    window.addEventListener(EVENEMENT_REJEU, redemander)
+    return () => window.removeEventListener(EVENEMENT_REJEU, redemander)
+  }, [])
 
   // Posé une seule fois : le retirer entre deux pages ferait clignoter tout ce qui est déjà apparu.
   useEffect(() => {
@@ -39,7 +64,15 @@ export function MotionLayer() {
       ;(element as HTMLElement).dataset.revealed = ''
     }
 
-    const cibles = document.querySelectorAll<HTMLElement>('[data-reveal]:not([data-revealed])')
+    // Un rejeu remet tout à l'état non révélé avant d'observer : c'est ce qui rend un changement
+    // de régime visible immédiatement, sans avoir à faire défiler la page.
+    if (rejeu > 0) {
+      document
+        .querySelectorAll<HTMLElement>('[data-revealed]')
+        .forEach((element) => delete element.dataset.revealed)
+    }
+
+    const cibles = document.querySelectorAll<HTMLElement>(A_REVELER)
     let aReveleQuelqueChose = false
 
     // `-10%` en bas : le bloc apparaît quand il est franchement entré, pas au premier pixel.
@@ -103,7 +136,7 @@ export function MotionLayer() {
       window.removeEventListener('resize', programmer)
       if (frame) cancelAnimationFrame(frame)
     }
-  }, [pathname])
+  }, [pathname, rejeu])
 
   return null
 }

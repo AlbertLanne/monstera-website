@@ -26,6 +26,13 @@ import type { ImageFiche } from '@/content/fr/fiche-images'
  * La hauteur de l'image est celle du texte : c'est le paragraphe qui commande le cadrage, pas
  * un rapport d'image fixé d'avance. Sous `lg`, la rangée redevient une colonne — texte puis
  * photographie pleine largeur.
+ *
+ * **Le mouvement d'entrée découle de cette mise en page**, il n'est pas plaqué dessus : le texte
+ * arrive du bord qu'il occupe, et la photographie se dévoile depuis l'arête qui touche le texte,
+ * donc vers l'intérieur de la page. Une rangée dont l'image est à gauche joue l'inverse. C'est
+ * ce qui distingue une entrée latérale motivée d'un effet décoratif : le sens du mouvement dit
+ * quelque chose de la grille. Les amplitudes, elles, viennent du régime d'intensité
+ * (`globals.css`) — à `sobre`, l'entrée latérale vaut zéro et le balisage ne produit rien.
  */
 
 export type Cote = 'gauche' | 'droite'
@@ -72,6 +79,7 @@ function DemiTexte({
     >
       <div
         data-reveal
+        {...{ 'data-reveal-from': imageADroite ? 'gauche' : 'droite' }}
         className={`w-full max-w-[calc(var(--container-page)/2)] pr-(--page-gutter) pl-(--page-gutter) ${padding} ${
           imageADroite ? 'lg:pr-16' : 'lg:pl-16'
         }`}
@@ -102,6 +110,7 @@ function DemiImage({
     <div
       data-reveal
       data-reveal-delay="1"
+      {...{ 'data-reveal-masque': imageADroite ? '' : 'droite' }}
       aria-hidden={alt === '' ? 'true' : undefined}
       className={`relative isolate overflow-hidden lg:aspect-auto lg:min-h-full ${
         RAPPORTS[image.orientation] ?? RAPPORTS.paysage
