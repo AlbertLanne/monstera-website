@@ -1,7 +1,9 @@
 import Link from 'next/link'
 
 import { Container } from '@/components/ui/Container'
-import { getPage, type PageSlug } from '@/content/fr'
+import { getPage, type PageSlug } from '@/content'
+import type { Locale } from '@/i18n/locales'
+import { UI } from '@/i18n/ui'
 
 /**
  * Renvois vers d'autres pages du site.
@@ -13,9 +15,11 @@ import { getPage, type PageSlug } from '@/content/fr'
 export function RelatedLinks({
   title,
   slugs,
+  locale,
 }: {
   title: string
   slugs: { slug: PageSlug; href: string }[]
+  locale: Locale
 }) {
   return (
     <section className="border-t border-line bg-page-alt py-16 sm:py-20">
@@ -27,7 +31,7 @@ export function RelatedLinks({
 
         <ul className="grid gap-px sm:grid-cols-3">
           {slugs.map(({ slug, href }) => {
-            const page = getPage(slug)
+            const page = getPage(locale, slug)
             return (
               <li key={href}>
                 <Link
@@ -46,7 +50,7 @@ export function RelatedLinks({
                     aria-hidden="true"
                     className="mt-auto pt-3 text-[0.8125rem] text-text-muted transition-transform duration-200 ease-(--ease-out-quart) group-hover:translate-x-1 group-hover:text-accent-contrast"
                   >
-                    Consulter →
+                    {UI[locale].renvois.consulter} →
                   </span>
                 </Link>
               </li>

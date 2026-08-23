@@ -56,7 +56,10 @@ jobs:
         run: |
           mkdir -p site
           for marque in investments advisors; do
-            NEXT_PUBLIC_MARQUE_STATIQUE="$marque" NEXT_PUBLIC_RACINE_STATIQUE="$RACINE" pnpm build
+            # `EXPORT_STATIQUE` dit au sélecteur d'entité de ne pas rediriger vers les vrais
+            # domaines : ici les deux entités sont deux exports voisins, pas deux sites en ligne.
+            NEXT_PUBLIC_EXPORT_STATIQUE=1 \
+              NEXT_PUBLIC_MARQUE_STATIQUE="$marque" NEXT_PUBLIC_RACINE_STATIQUE="$RACINE" pnpm build
             mv out "site/$marque"
             rm -rf .next
           done
@@ -74,11 +77,11 @@ jobs:
               <meta charset="utf-8" />
               <meta name="viewport" content="width=device-width, initial-scale=1" />
               <meta name="robots" content="noindex, nofollow" />
-              <meta http-equiv="refresh" content="0; url=./investments/" />
+              <meta http-equiv="refresh" content="0; url=./investments/fr/" />
               <title>Preview</title>
             </head>
             <body>
-              <p><a href="./investments/">Accéder à la preview</a></p>
+              <p><a href="./investments/fr/">Accéder à la preview</a></p>
             </body>
           </html>
           HTML

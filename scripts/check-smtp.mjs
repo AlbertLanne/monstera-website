@@ -72,7 +72,7 @@ function explain(error) {
   const hints = {
     EAUTH:
       'Identifiants refusés. Chez IONOS, SMTP_USER est l’adresse e-mail COMPLÈTE de la boîte ' +
-      '(par exemple no-reply@argentum-investments.ch), pas un login abrégé, et le mot de passe ' +
+      '(par exemple no-reply@argentuminvestments.ch), pas un login abrégé, et le mot de passe ' +
       'est celui de la boîte, pas celui du compte client IONOS.',
     ECONNREFUSED: 'Connexion refusée. Hôte ou port erroné, ou port bloqué par le réseau.',
     ETIMEDOUT:

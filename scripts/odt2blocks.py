@@ -7,6 +7,7 @@ Structure ODF observee :
                                     -> item de liste a label (ou etape si LABEL commence par "NN -")
 """
 import json
+import pathlib
 import re
 import sys
 import unicodedata
@@ -134,12 +135,26 @@ def build(flat):
     return mark_disclaimer(blocks)
 
 
+# Repères des trois langues : le client a livré le même avertissement en français, en anglais et
+# en allemand. Une liste unique suffit — aucun de ces fragments n'apparaît dans une autre langue.
 DISCLAIMER_HINTS = (
+    # français
     "n’est ni une banque",
     "ne confère aucun droit",
     "aucun engagement",
     "ne constitue ni un engagement",
     "demeurent soumis",
+    # anglais
+    "does not create any entitlement",
+    "does not constitute",
+    "is not a bank",
+    "subject to individual assessment",
+    # allemand
+    "begründet weder einen Anspruch",
+    "keine verbindliche",
+    "ist keine Bank",
+    "unterliegt einer individuellen Prüfung",
+    "unterliegen einer individuellen Prüfung",
 )
 
 
@@ -163,7 +178,12 @@ def convert(path):
 
 
 if __name__ == "__main__":
+    # Argument : la racine des sources client. Les documents sont indexes par leur chemin
+    # RELATIF a cette racine — `Crowdfunding.odt`, `en/Crowdfunding.odt`, `de/Crowdfunding.odt`.
+    # Le seul nom de fichier ne suffit plus : les trois langues emploient les memes.
+    root = sys.argv[1] if len(sys.argv) > 1 else "content-source"
     result = {}
-    for path in sys.argv[1:]:
-        result[path.split("/")[-1]] = convert(path)
+    for path in sorted(pathlib.Path(root).rglob("*.odt")):
+        key = path.relative_to(root).as_posix()
+        result[key] = convert(str(path))
     print(json.dumps(result, ensure_ascii=False, indent=1))

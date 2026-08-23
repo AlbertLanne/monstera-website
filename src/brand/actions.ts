@@ -11,7 +11,7 @@ const ONE_YEAR = 60 * 60 * 24 * 365
  * Mémorise la bascule manuelle entre les deux entités.
  *
  * Le cookie est prioritaire sur le nom de domaine : un visiteur qui a choisi Advisors
- * reste sur Advisors, y compris sur argentum-investments.ch.
+ * reste sur Advisors, y compris sur argentuminvestments.ch.
  */
 export async function switchBrand(key: BrandKey) {
   if (!isBrandKey(key)) return

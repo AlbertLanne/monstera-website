@@ -1,7 +1,7 @@
 // Généré depuis le contenu client (.odt) — ne pas éditer à la main.
 // Source : Ventuere Capital.odt
 // %BRAND% est résolu à l’exécution selon l’entité active.
-import type { PageContent } from './types'
+import type { PageContent } from '../types'
 
 export const capital_risque: PageContent = {
   "slug": "capital-risque",

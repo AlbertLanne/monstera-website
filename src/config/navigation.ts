@@ -1,4 +1,6 @@
-import type { PageSlug } from '@/content/fr'
+import { getPages, type PageSlug } from '@/content'
+import { pathnameForLocale, type Locale } from '@/i18n/locales'
+import { UI } from '@/i18n/ui'
 
 export type NavLink = {
   label: string
@@ -9,6 +11,22 @@ export type NavLink = {
 }
 
 /**
+ * La navigation dépend de la langue.
+ *
+ * **Les libellés viennent du contenu client**, jamais d'une liste écrite ici : chaque fiche porte
+ * son `menu`, traduit par le client dans les trois langues. Une seule entrée fait exception,
+ * Contact, qui n'a pas de fiche — son libellé vit dans `src/i18n/ui.ts`.
+ *
+ * Les chemins, eux, sont communs aux trois langues : les slugs restent français, seul le préfixe
+ * de langue change. C'est l'arbitrage d'URL décrit dans `src/i18n/locales.ts`.
+ */
+
+/** Chemin d'une page dans la langue voulue : `/services` ou `/en/services`. */
+function lien(locale: Locale, chemin: string): string {
+  return pathnameForLocale(chemin, locale)
+}
+
+/**
  * Sous-menu Finance, classé par priorité commerciale décroissante.
  *
  * Le financement immobilier et le capital-investissement portent le plus de demande et les
@@ -16,51 +34,74 @@ export type NavLink = {
  * elle-même que la levée de fonds auprès du public n'est pas au cœur de l'approche : c'est une
  * page défensive, pas un produit d'appel.
  */
-export const FINANCE_LINKS: NavLink[] = [
-  { label: 'Financement immobilier', href: '/finance/financement-immobilier', content: 'financement-immobilier' },
-  { label: 'Capital-investissement', href: '/finance/capital-investissement', content: 'capital-investissement' },
-  { label: 'Capital-risque', href: '/finance/capital-risque', content: 'capital-risque' },
-  { label: 'Investissements start-up', href: '/finance/investissements-start-up', content: 'investissements-start-up' },
-  { label: 'Mezzanine Capital', href: '/finance/mezzanine-capital', content: 'mezzanine-capital' },
-  { label: 'Développement de projets', href: '/finance/developpement-de-projets', content: 'developpement-de-projets' },
-  { label: 'Énergies renouvelables', href: '/finance/energies-renouvelables', content: 'energies-renouvelables' },
-  { label: 'Médecine & Pharma', href: '/finance/medecine-pharma', content: 'medecine-pharma' },
-  {
-    label: 'Solutions technologiques & E-Mobilité',
-    href: '/finance/solutions-technologiques-e-mobilite',
-    content: 'solutions-technologiques-e-mobilite',
-  },
-  { label: 'Crowdfunding', href: '/finance/crowdfunding', content: 'crowdfunding' },
-]
+const FINANCE_SLUGS = [
+  'financement-immobilier',
+  'capital-investissement',
+  'capital-risque',
+  'investissements-start-up',
+  'mezzanine-capital',
+  'developpement-de-projets',
+  'energies-renouvelables',
+  'medecine-pharma',
+  'solutions-technologiques-e-mobilite',
+  'crowdfunding',
+] as const satisfies readonly PageSlug[]
 
-export const MAIN_NAV: NavLink[] = [
-  { label: 'Accueil', href: '/', content: 'accueil' },
-  {
-    label: 'Services',
-    href: '/services',
-    content: 'services',
-    children: [
-      { label: 'Services immobilier', href: '/services/immobilier', content: 'services-immobilier' },
-    ],
-  },
-  { label: 'Finance', href: '/finance', children: FINANCE_LINKS },
-  { label: 'À propos', href: '/a-propos', content: 'a-propos' },
-  { label: 'Discrétion', href: '/discretion', content: 'discretion' },
-  { label: 'Notre équipe', href: '/notre-equipe', content: 'notre-equipe' },
-  { label: 'Contact', href: '/contact' },
-]
+export type FinanceSlug = (typeof FINANCE_SLUGS)[number]
 
-export const LEGAL_NAV: NavLink[] = [
-  { label: 'Mentions légales', href: '/mentions-legales', content: 'mentions-legales' },
-  { label: 'Impressum', href: '/impressum', content: 'impressum' },
-  {
-    label: 'Politique de confidentialité',
-    href: '/politique-de-confidentialite',
-    content: 'politique-de-confidentialite',
-  },
-]
+export function financeLinks(locale: Locale): NavLink[] {
+  const pages = getPages(locale)
+  return FINANCE_SLUGS.map((slug) => ({
+    label: pages[slug].menu,
+    href: lien(locale, `/finance/${slug}`),
+    content: slug,
+  }))
+}
+
+export function mainNav(locale: Locale): NavLink[] {
+  const pages = getPages(locale)
+  return [
+    { label: pages.accueil.menu, href: lien(locale, '/'), content: 'accueil' },
+    {
+      label: pages.services.menu,
+      href: lien(locale, '/services'),
+      content: 'services',
+      children: [
+        {
+          label: pages['services-immobilier'].menu,
+          href: lien(locale, '/services/immobilier'),
+          content: 'services-immobilier',
+        },
+      ],
+    },
+    {
+      label: pages.finance.menu,
+      href: lien(locale, '/finance'),
+      content: 'finance',
+      children: financeLinks(locale),
+    },
+    { label: pages['a-propos'].menu, href: lien(locale, '/a-propos'), content: 'a-propos' },
+    { label: pages.discretion.menu, href: lien(locale, '/discretion'), content: 'discretion' },
+    { label: pages['notre-equipe'].menu, href: lien(locale, '/notre-equipe'), content: 'notre-equipe' },
+    { label: UI[locale].nav.contact, href: lien(locale, '/contact') },
+  ]
+}
+
+export function legalNav(locale: Locale): NavLink[] {
+  const pages = getPages(locale)
+  return (['mentions-legales', 'impressum', 'politique-de-confidentialite'] as const).map((slug) => ({
+    label: pages[slug].menu,
+    href: lien(locale, `/${slug}`),
+    content: slug,
+  }))
+}
 
 /** Slug de fiche Finance -> URL, pour les liens croisés entre pages sectorielles. */
-export const FINANCE_HREF_BY_CONTENT = new Map(
-  FINANCE_LINKS.map((link) => [link.content, link.href] as const),
-)
+export function financeHrefByContent(locale: Locale): Map<PageSlug, string> {
+  return new Map(financeLinks(locale).map((link) => [link.content as PageSlug, link.href]))
+}
+
+/** Le slug de fiche derrière un segment d'URL Finance, pour la route `[slug]`. */
+export const FINANCE_SLUG_SET: ReadonlySet<string> = new Set(FINANCE_SLUGS)
+
+export { FINANCE_SLUGS }

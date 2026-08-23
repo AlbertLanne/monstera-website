@@ -1,7 +1,7 @@
 // Généré depuis le contenu client (.odt) — ne pas éditer à la main.
 // Source : Financement immobilier.odt
 // %BRAND% est résolu à l’exécution selon l’entité active.
-import type { PageContent } from './types'
+import type { PageContent } from '../types'
 
 export const financement_immobilier: PageContent = {
   "slug": "financement-immobilier",

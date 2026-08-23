@@ -1,12 +1,12 @@
 // Généré depuis le contenu client (.odt) — ne pas éditer à la main.
 // Source : Notre Équipe.odt
 // %BRAND% est résolu à l’exécution selon l’entité active.
-import type { PageContent } from './types'
+import type { PageContent } from '../types'
 
 export const notre_equipe: PageContent = {
   "slug": "notre-equipe",
   "menu": "Notre équipe",
-  "title": "Notre équipe",
+  "title": "Notre Équipe",
   "lead": [
     "Derrière %BRAND% se trouve une équipe de partenaires soigneusement sélectionnés, réunissant des expertises complémentaires, une solide expérience entrepreneuriale et une vision internationale.",
     "Chaque membre de notre équipe apporte son expertise, sa connaissance des marchés et son réseau professionnel. Ensemble, nous partageons un objectif commun : identifier et évaluer les opportunités d’investissement avec discernement, construire des partenariats à long terme et créer une valeur durable.",

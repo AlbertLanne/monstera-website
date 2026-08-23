@@ -1,7 +1,8 @@
 import { resolveBrandText, type Brand } from '@/brand/brands'
 import { Button } from '@/components/ui/Button'
 import { LegalIdentity } from '@/components/LegalIdentity'
-import type { Block } from '@/content/fr/types'
+import type { Block } from '@/content/types'
+import type { Locale } from '@/i18n/locales'
 
 /** Contexte de rendu : sur un bandeau inversé, les jetons de couleur changent de rôle. */
 export type Tone = 'page' | 'band'
@@ -37,6 +38,7 @@ const TONES: Record<Tone, ToneClasses> = {
 type RenderProps = {
   block: Block
   brand: Brand
+  locale: Locale
   tone: Tone
   /** Destination des appels à l'action de la page. */
   ctaHref: string
@@ -208,7 +210,7 @@ function Disclaimer({ paragraphs, brand }: { paragraphs: string[]; brand: Brand 
   )
 }
 
-export function BlockRenderer({ block, brand, tone, ctaHref }: RenderProps) {
+export function BlockRenderer({ block, brand, locale, tone, ctaHref }: RenderProps) {
   switch (block.type) {
     case 'prose':
       return <Prose paragraphs={block.paragraphs} brand={brand} tone={tone} />
@@ -223,7 +225,7 @@ export function BlockRenderer({ block, brand, tone, ctaHref }: RenderProps) {
     case 'definitions':
       return <Definitions items={block.items} brand={brand} tone={tone} />
     case 'legalIdentity':
-      return <LegalIdentity brand={brand} />
+      return <LegalIdentity brand={brand} locale={locale} />
     case 'disclaimer':
       return <Disclaimer paragraphs={block.paragraphs} brand={brand} />
     case 'button':

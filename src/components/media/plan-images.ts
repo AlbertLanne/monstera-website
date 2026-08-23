@@ -1,5 +1,5 @@
 import type { Cote } from '@/components/media/RangeeAlternee'
-import type { ImageFiche } from '@/content/fr/fiche-images'
+import type { ImageFiche } from '@/content/fiche-images'
 
 /**
  * Attribue une photographie aux sections qui peuvent en porter une.

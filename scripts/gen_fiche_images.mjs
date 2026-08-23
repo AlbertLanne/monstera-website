@@ -1,5 +1,5 @@
 /**
- * Génère `src/content/fr/fiche-images.ts` depuis `src/assets/images/fiches/`.
+ * Génère `src/content/fiche-images.ts` depuis `src/assets/images/fiches/`.
  *
  * Les images sont importées statiquement et non servies depuis `public/` : c'est ce qui donne à
  * Next les dimensions réelles (pas de saut de mise en page) et l'aperçu flouté au chargement.
@@ -16,7 +16,7 @@ const require = createRequire(import.meta.url)
 const sharp = require('../node_modules/.pnpm/sharp@0.35.3_@types+node@20.19.43/node_modules/sharp')
 
 const RACINE = 'src/assets/images/fiches'
-const CIBLE = 'src/content/fr/fiche-images.ts'
+const CIBLE = 'src/content/fiche-images.ts'
 
 /** Le cadrage possible d'une image découle de son rapport, pas d'un classement à la main. */
 function orientation(ratio) {

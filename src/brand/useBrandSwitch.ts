@@ -1,82 +1,71 @@
 'use client'
 
-import { useEffect, useState, useSyncExternalStore, useTransition } from 'react'
+import { usePathname } from 'next/navigation'
+import { useTransition } from 'react'
 
 import { switchBrand } from './actions'
-import { BRANDS, strictBrandFromHost, type BrandKey } from './brands'
+import { BRANDS, type BrandKey } from './brands'
 
-/** Le nom d'hôte ne change pas pendant la vie de la page : il n'y a rien à quoi s'abonner. */
-function neJamaisChanger() {
-  return () => {}
-}
-
-function surDomaineReel() {
-  return strictBrandFromHost(window.location.hostname) !== null
-}
+/**
+ * Vrai uniquement dans l'export statique GitHub Pages, où la variable est posée par
+ * `.github/workflows/pages.yml`. Cet export n'est pas servi sur un domaine Argentum : les deux
+ * entités y sont deux sites voisins sous la même racine, et `actions.statique.ts` remplace
+ * l'action serveur pour aller de l'un à l'autre.
+ */
+const EXPORT_STATIQUE = process.env.NEXT_PUBLIC_EXPORT_STATIQUE === '1'
 
 /**
  * Bascule entre les deux entités, partagé par le sélecteur de l'en-tête et la section
  * « deux sociétés » de l'accueil.
  *
- * Deux comportements, décidés par le nom d'hôte :
+ * **Chaque société a son propre nom de domaine, et basculer, c'est aller chez l'autre.** Le
+ * client déploie le site sur deux serveurs et deux domaines : le bouton de l'entité inactive est
+ * donc un `<a>` vers `argentuminvestments.ch` ou `argentumadvisors.ch`, sur le même chemin. C'est
+ * la seule cible juste — l'adresse affichée dans la barre du navigateur doit correspondre à la
+ * raison sociale affichée dans le pied de page.
  *
- * — Sur un vrai domaine Argentum, chaque société a le sien. Basculer, c'est aller chez l'autre :
- *   le clic redirige vers `argentum-advisors.ch` ou `argentum-investments.ch`, sur la même page.
- *   C'est la cible réelle, et c'est ce qui rend l'adresse affichée cohérente avec la raison
- *   sociale affichée.
- * — Partout ailleurs — localhost, préproduction — aucun des deux domaines ne sert le site :
- *   rediriger casserait la démonstration. Le thème est alors appliqué au `<html>` sans attendre
- *   le serveur, puis l'action serveur pose le cookie et rejoue le rendu pour mettre à jour la
- *   raison sociale dans le corps du texte et les mentions légales du pied de page.
+ * La redirection est inconditionnelle : elle vaut aussi en local et en préproduction, pour que le
+ * comportement observé pendant la recette soit celui de la production. Pour travailler l'autre
+ * entité en local sans quitter le serveur de développement, figer la marque au démarrage —
+ * `NEXT_PUBLIC_MARQUE_STATIQUE=advisors pnpm dev` — plutôt que de cliquer.
  *
- * `redirects` ne peut être connu qu'après le montage : le rendu du serveur et celui du premier
- * passage client doivent être identiques, et `window` n'existe pas dans le premier. D'où
- * `useSyncExternalStore`, dont c'est le rôle — lire une valeur extérieure à React qui diffère
- * entre serveur et client, sans provoquer le rendu en cascade d'un `setState` dans un effet.
+ * Seule exception, l'export statique : aucun des deux domaines ne le sert, et y rediriger
+ * casserait la préproduction envoyée au client. Le clic y reste une navigation vers l'export
+ * voisin, gérée par `actions.statique.ts`.
  *
- * `shown` est l'entité que l'interface doit refléter : le choix du visiteur dès qu'il a cliqué,
- * l'entité rendue par le serveur sinon. Le choix n'a pas besoin d'être relâché quand le serveur
- * rattrape — les deux valeurs coïncident alors.
+ * Le chemin vient de `usePathname()` et non de `window.location` : `hrefFor()` est appelé pendant
+ * le rendu, y compris côté serveur où `window` n'existe pas.
  */
 export function useBrandSwitch(active: BrandKey) {
-  const [chosen, setChosen] = useState<BrandKey | null>(null)
+  const pathname = usePathname()
   const [isPending, startTransition] = useTransition()
 
-  const shown = chosen ?? active
-  const redirects = useSyncExternalStore(neJamaisChanger, surDomaineReel, () => false)
+  const redirects = !EXPORT_STATIQUE
 
-  useEffect(() => {
-    if (chosen === null) return
-    document.documentElement.dataset.brand = chosen
-  }, [chosen])
+  /**
+   * Adresse de la même page chez l'autre entité. Vide dans l'export statique, où le bouton n'est
+   * pas un lien : un `href` vers un domaine qui ne sert pas cette préproduction tromperait le
+   * visiteur qui survole, et le clic droit « ouvrir dans un nouvel onglet » y mènerait vraiment.
+   */
+  function hrefFor(key: BrandKey): string {
+    if (!redirects) return ''
+    return `https://${BRANDS[key].domain}${pathname}`
+  }
 
   function select(key: BrandKey) {
-    // Comparaison sur `shown` : un second clic pendant que le serveur travaille ne doit pas
-    // relancer l'action.
-    if (key === shown) return
+    if (key === active) return
 
     if (redirects) {
       window.location.href = hrefFor(key)
       return
     }
 
-    setChosen(key)
     startTransition(() => {
       void switchBrand(key)
     })
   }
 
-  /**
-   * Adresse de la même page chez l'autre entité. Vide hors des vrais domaines, où le bouton
-   * n'est pas un lien : un `href` pointant vers un domaine qui ne sert pas le site tromperait
-   * le visiteur qui survole, et le clic droit « ouvrir dans un nouvel onglet » y mènerait
-   * vraiment.
-   */
-  function hrefFor(key: BrandKey): string {
-    if (!redirects) return ''
-    const { pathname, search, hash } = window.location
-    return `https://${BRANDS[key].domain}${pathname}${search}${hash}`
-  }
-
-  return { select, isPending, shown, redirects, hrefFor }
+  // `shown` reste exposé pour les appelants : l'entité que l'interface doit refléter. Sans
+  // bascule sur place, c'est toujours celle qu'a rendue le serveur.
+  return { select, isPending, shown: active, redirects, hrefFor }
 }

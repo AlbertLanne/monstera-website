@@ -3,6 +3,8 @@
 import { BRANDS, BRAND_KEYS, type BrandKey } from '@/brand/brands'
 import { useBrandSwitch } from '@/brand/useBrandSwitch'
 import { Container } from '@/components/ui/Container'
+import type { Locale } from '@/i18n/locales'
+import type { UIStrings } from '@/i18n/ui'
 
 const ACTION_CLASS =
   'group inline-flex items-center gap-3 rounded-(--radius-md) border border-line-strong px-6 py-3.5 ' +
@@ -52,12 +54,21 @@ function SwitchAction({
  *
  * Argentum Investments SA et Argentum Advisors SA sont deux sociétés anonymes genevoises
  * distinctes, inscrites au registre du commerce sous des numéros différents et actives dans des
- * secteurs différents. Le même site est déployé sur leurs deux domaines ; cette section permet
- * de passer de l'une à l'autre, ce qui change la raison sociale dans tout le contenu, les
- * mentions légales du pied de page, l'adresse de contact et le thème visuel.
+ * secteurs différents. Le même code est déployé sur leurs deux domaines ; passer à l'autre
+ * société, c'est donc aller sur son domaine — la raison sociale, les mentions légales, l'adresse
+ * de contact et le thème visuel y sont ceux de cette société.
  */
-export function TwoEntities({ active }: { active: BrandKey }) {
+export function TwoEntities({
+  active,
+  locale,
+  strings,
+}: {
+  active: BrandKey
+  locale: Locale
+  strings: UIStrings
+}) {
   const { select, isPending, shown, redirects, hrefFor } = useBrandSwitch(active)
+  const t = strings.marque
 
   return (
     <section className="border-y border-line bg-page py-16 sm:py-20 lg:py-(--spacing-section)">
@@ -65,12 +76,10 @@ export function TwoEntities({ active }: { active: BrandKey }) {
         <div data-reveal className="mb-12 flex flex-col gap-5">
           <span aria-hidden="true" className="h-px w-14 bg-accent" />
           <h2 className="max-w-[34ch] text-[1.75rem] leading-[1.2] sm:text-[2.125rem]">
-            Deux sociétés, une même approche du capital privé
+            {t.titre}
           </h2>
           <p className="max-w-(--container-prose) text-[1.0625rem] leading-[1.75] text-text-muted">
-            Le groupe Argentum réunit deux sociétés anonymes genevoises aux périmètres
-            complémentaires. Choisissez l’entité qui correspond à votre demande : le site,
-            ses mentions légales et son adresse de contact s’adaptent aussitôt.
+            {t.intro}
           </p>
         </div>
 
@@ -94,7 +103,7 @@ export function TwoEntities({ active }: { active: BrandKey }) {
                     </h3>
                     {isActive ? (
                       <span className="shrink-0 rounded-(--radius-sm) bg-brand px-2.5 py-1 text-[0.625rem] font-medium uppercase tracking-[0.12em] text-on-brand">
-                        Affichée
+                        {t.affichee}
                       </span>
                     ) : null}
                   </div>
@@ -102,19 +111,19 @@ export function TwoEntities({ active }: { active: BrandKey }) {
                   <dl className="space-y-3 text-[0.875rem]">
                     <div>
                       <dt className="text-[0.6875rem] uppercase tracking-[0.12em] text-text-muted">
-                        Secteur d’activité
+                        {t.secteur}
                       </dt>
-                      <dd className="mt-1 leading-snug text-text">{brand.sector}</dd>
+                      <dd className="mt-1 leading-snug text-text">{brand.sector[locale]}</dd>
                     </div>
                     <div>
                       <dt className="text-[0.6875rem] uppercase tracking-[0.12em] text-text-muted">
-                        Registre du commerce
+                        {t.registre}
                       </dt>
                       <dd className="mt-1 text-text">{brand.registryNumber}</dd>
                     </div>
                     <div>
                       <dt className="text-[0.6875rem] uppercase tracking-[0.12em] text-text-muted">
-                        Contact
+                        {t.contact}
                       </dt>
                       <dd className="mt-1 text-text">{brand.email}</dd>
                     </div>
@@ -123,11 +132,11 @@ export function TwoEntities({ active }: { active: BrandKey }) {
                   <div className="mt-auto pt-2">
                     {isActive ? (
                       <p className="text-[0.8125rem] text-text-muted">
-                        Vous consultez actuellement le site de cette société.
+                        {t.vousConsultez}
                       </p>
                     ) : (
                       <SwitchAction
-                        label={`Afficher ${brand.legalName}`}
+                        label={`${t.afficher} ${brand.legalName}`}
                         href={redirects ? hrefFor(key) : null}
                         onSelect={() => select(key)}
                         disabled={isPending}

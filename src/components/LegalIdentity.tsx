@@ -1,4 +1,6 @@
 import type { Brand } from '@/brand/brands'
+import type { Locale } from '@/i18n/locales'
+import { UI } from '@/i18n/ui'
 
 type Row = {
   label: string
@@ -18,11 +20,12 @@ const LINK_CLASS =
  * aller chercher. Seule la société affichée est nommée : sur le domaine d'Advisors, renvoyer
  * aussi vers Investments mélangerait deux personnes morales que tout le reste du site sépare.
  */
-function RegistryLink({ brand }: { brand: Brand }) {
+function RegistryLink({ brand, locale }: { brand: Brand; locale: Locale }) {
+  const t = UI[locale].legal
   return (
     <div data-registry-link className="mt-4">
       <p className="text-[0.6875rem] uppercase tracking-[0.1em] text-text-muted">
-        Vérifier au registre du commerce
+        {t.verifierRegistre}
       </p>
       <a
         href={brand.registryUrl}
@@ -30,7 +33,7 @@ function RegistryLink({ brand }: { brand: Brand }) {
         rel="noopener noreferrer"
         className={`mt-1.5 inline-block text-[0.8125rem] leading-snug ${LINK_CLASS}`}
       >
-        {brand.legalName} sur Moneyhouse
+        {brand.legalName} {t.surMoneyhouse}
       </a>
     </div>
   )
@@ -45,24 +48,27 @@ function RegistryLink({ brand }: { brand: Brand }) {
  */
 export function LegalIdentity({
   brand,
+  locale,
   /** Ajoute sous le numéro de registre le lien vers la fiche Moneyhouse de la société affichée. */
   registryLink = false,
 }: {
   brand: Brand
+  locale: Locale
   registryLink?: boolean
 }) {
+  const t = UI[locale].legal
   const rows: Row[] = []
 
-  if (brand.uid) rows.push({ label: 'Numéro d’identification de l’entreprise (UID)', value: brand.uid })
-  rows.push({ label: 'Numéro du registre du commerce', value: brand.registryNumber })
-  rows.push({ label: 'Forme juridique', value: 'Société anonyme (SA)' })
-  rows.push({ label: 'Secteur d’activité', value: brand.sector })
-  if (brand.representative) rows.push({ label: 'Représentant autorisé', value: brand.representative })
+  if (brand.uid) rows.push({ label: t.uid, value: brand.uid })
+  rows.push({ label: t.registre, value: brand.registryNumber })
+  rows.push({ label: t.formeJuridique, value: t.societeAnonyme })
+  rows.push({ label: t.secteur, value: brand.sector[locale] })
+  if (brand.representative) rows.push({ label: t.representant, value: brand.representative })
 
   return (
     // Le bloc sert à la fois dans la colonne étroite de la page Contact et sur toute la largeur
     // de l'Impressum : la mise en deux colonnes dépend de la place réelle, pas de la fenêtre.
-    <div className="@container space-y-8">
+    <div data-legal-identity className="@container space-y-8">
       <address className="not-italic">
         <p className="font-(family-name:--font-display) text-[1.25rem] text-text-strong">
           {brand.legalName}
@@ -73,7 +79,7 @@ export function LegalIdentity({
             <br />
             {brand.address.postalCode} {brand.address.city}
             <br />
-            {brand.address.country}
+            {t.pays}
           </p>
         ) : null}
         <p className="mt-3 text-[0.9375rem]">
@@ -104,7 +110,7 @@ export function LegalIdentity({
                 ) : (
                   row.value
                 )}
-                {registryLink && isRegistry ? <RegistryLink brand={brand} /> : null}
+                {registryLink && isRegistry ? <RegistryLink brand={brand} locale={locale} /> : null}
               </dd>
             </div>
           )

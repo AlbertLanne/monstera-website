@@ -1,7 +1,7 @@
 import Image from 'next/image'
 
 import { Container } from '@/components/ui/Container'
-import type { ImageFiche } from '@/content/fr/fiche-images'
+import type { ImageFiche } from '@/content/fiche-images'
 
 /**
  * Le bandeau pleine largeur — la seule figure d'image qui ne soit pas une rangée.

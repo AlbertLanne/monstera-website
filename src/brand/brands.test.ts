@@ -18,8 +18,8 @@ import {
 
 describe('brandFromHost', () => {
   it('reconnaît les deux domaines de production', () => {
-    expect(brandFromHost('argentum-investments.ch')).toBe('investments')
-    expect(brandFromHost('argentum-advisors.ch')).toBe('advisors')
+    expect(brandFromHost('argentuminvestments.ch')).toBe('investments')
+    expect(brandFromHost('argentumadvisors.ch')).toBe('advisors')
   })
 
   it('ignore la casse et le port', () => {
@@ -40,8 +40,8 @@ describe('brandFromHost', () => {
   it('ne confond pas les deux domaines entre eux', () => {
     // Les deux chaînes partagent le préfixe « argentum- » : la correspondance doit porter sur
     // le domaine entier, pas sur ce préfixe.
-    expect(brandFromHost('argentum-investments.ch')).not.toBe('advisors')
-    expect(brandFromHost('argentum-advisors.ch')).not.toBe('investments')
+    expect(brandFromHost('argentuminvestments.ch')).not.toBe('advisors')
+    expect(brandFromHost('argentumadvisors.ch')).not.toBe('investments')
   })
 })
 
@@ -112,17 +112,17 @@ describe('strictBrandFromHost', () => {
    * Cette fonction décide de deux choses à la fois : qui fait autorité côté serveur — le domaine
    * ou le cookie — et si le sélecteur redirige ou bascule sur place. Un faux positif sur
    * `localhost` casserait la démonstration au clic ; un faux négatif sur le domaine de
-   * production ferait afficher Advisors sur argentum-investments.ch.
+   * production ferait afficher Advisors sur argentuminvestments.ch.
    */
   it('reconnaît les deux domaines de production', () => {
-    expect(strictBrandFromHost('argentum-investments.ch')).toBe('investments')
-    expect(strictBrandFromHost('argentum-advisors.ch')).toBe('advisors')
+    expect(strictBrandFromHost('argentuminvestments.ch')).toBe('investments')
+    expect(strictBrandFromHost('argentumadvisors.ch')).toBe('advisors')
   })
 
   it('accepte le sous-domaine www et le port', () => {
-    expect(strictBrandFromHost('www.argentum-advisors.ch')).toBe('advisors')
-    expect(strictBrandFromHost('argentum-investments.ch:3000')).toBe('investments')
-    expect(strictBrandFromHost('ARGENTUM-ADVISORS.CH')).toBe('advisors')
+    expect(strictBrandFromHost('www.argentumadvisors.ch')).toBe('advisors')
+    expect(strictBrandFromHost('argentuminvestments.ch:3000')).toBe('investments')
+    expect(strictBrandFromHost('ARGENTUMADVISORS.CH')).toBe('advisors')
   })
 
   it('ne reconnaît ni localhost ni une préproduction', () => {
@@ -139,8 +139,8 @@ describe('strictBrandFromHost', () => {
 
   it('refuse un domaine qui contient le nôtre sans être le nôtre', () => {
     // `brandFromHost` accepte large et c'est voulu ; celle-ci ne le doit pas.
-    expect(strictBrandFromHost('argentum-investments.ch.exemple.com')).toBeNull()
-    expect(brandFromHost('argentum-investments.ch.exemple.com')).toBe('investments')
+    expect(strictBrandFromHost('argentuminvestments.ch.exemple.com')).toBeNull()
+    expect(brandFromHost('argentuminvestments.ch.exemple.com')).toBe('investments')
   })
 
   it('renvoie null sur une valeur absente', () => {

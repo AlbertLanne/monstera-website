@@ -8,9 +8,12 @@ import type { BrandKey } from '@/brand/brands'
 import { useBrandActif } from '@/brand/useBrandActif'
 import { useBrandSwitch } from '@/brand/useBrandSwitch'
 import { BrandSwitcher, type Commandes } from '@/components/BrandSwitcher'
+import { LocaleSwitcher } from '@/components/LocaleSwitcher'
 import { Logo } from '@/components/Logo'
 import { Container } from '@/components/ui/Container'
 import type { NavLink } from '@/config/navigation'
+import type { Locale } from '@/i18n/locales'
+import type { UIStrings } from '@/i18n/ui'
 
 function isCurrent(pathname: string, href: string) {
   if (href === '/') return pathname === '/'
@@ -52,7 +55,7 @@ function DesktopEntry({ link, pathname }: { link: NavLink; pathname: string }) {
       <Link
         href={link.href}
         aria-current={active ? 'page' : undefined}
-        className={`relative py-2 text-[0.8125rem] font-medium tracking-[0.04em] transition-colors duration-200 ${entryClasses(active)}`}
+        className={`relative py-2 text-[0.8125rem] font-medium tracking-[0.04em] whitespace-nowrap transition-colors duration-200 ${entryClasses(active)}`}
       >
         {link.label}
       </Link>
@@ -73,7 +76,7 @@ function DesktopEntry({ link, pathname }: { link: NavLink; pathname: string }) {
         aria-expanded={open}
         aria-current={active ? 'page' : undefined}
         onFocus={() => setOpen(true)}
-        className={`flex items-center gap-1.5 py-2 text-[0.8125rem] font-medium tracking-[0.04em] transition-colors duration-200 ${entryClasses(active)}`}
+        className={`flex items-center gap-1.5 py-2 text-[0.8125rem] font-medium tracking-[0.04em] whitespace-nowrap transition-colors duration-200 ${entryClasses(active)}`}
       >
         {link.label}
         <span
@@ -118,15 +121,19 @@ function MobileMenu({
   nav,
   pathname,
   commandes,
+  locale,
+  strings,
   onClose,
 }: {
   nav: NavLink[]
   pathname: string
   commandes: Commandes
+  locale: Locale
+  strings: UIStrings
   onClose: () => void
 }) {
   return (
-    <div className="fixed inset-0 top-[var(--header-h)] z-40 overflow-y-auto bg-menu lg:hidden">
+    <div className="fixed inset-0 top-[var(--header-h)] z-40 overflow-y-auto bg-menu xl:hidden">
       <Container className="py-8">
         <nav>
           <ul className="divide-y divide-menu-line">
@@ -166,17 +173,31 @@ function MobileMenu({
 
         <div className="mt-10 border-t border-menu-line pt-8">
           <p className="mb-3 text-[0.6875rem] uppercase tracking-[0.14em] text-white/60">
-            Entité du groupe
+            {strings.nav.entiteDuGroupe}
           </p>
-          <BrandSwitcher commandes={commandes} onDark />
+          <BrandSwitcher commandes={commandes} locale={locale} strings={strings} onDark />
+        </div>
+
+        <div className="mt-8">
+          <p className="mb-3 text-[0.6875rem] uppercase tracking-[0.14em] text-white/60">
+            {strings.nav.langue}
+          </p>
+          <LocaleSwitcher strings={strings} onDark />
         </div>
       </Container>
     </div>
   )
 }
 
-/** L'accueil est la seule page dont le hero est une vidéo plein écran. */
-const HERO_ROUTES = new Set(['/'])
+/**
+ * L'accueil est la seule page dont le hero est une vidéo plein écran. Son chemin dépend de la
+ * langue : `/` en français, `/en` et `/de` ailleurs.
+ */
+function surLAccueil(pathname: string, locale: Locale) {
+  // La barre finale existe dans l'export statique (`trailingSlash`), pas sur le site servi.
+  const nu = pathname.replace(/\/$/, '')
+  return nu === '' || nu === `/${locale}`
+}
 
 /**
  * En-tête du site.
@@ -191,13 +212,23 @@ const HERO_ROUTES = new Set(['/'])
  * `useBrandSwitch` est tenu ici et non dans le sélecteur : l'en-tête en affiche deux — la barre
  * et le tiroir mobile — qui doivent réagir ensemble au même clic.
  */
-export function Header({ nav, brandKey }: { nav: NavLink[]; brandKey: BrandKey }) {
+export function Header({
+  nav,
+  brandKey,
+  locale,
+  strings,
+}: {
+  nav: NavLink[]
+  brandKey: BrandKey
+  locale: Locale
+  strings: UIStrings
+}) {
   const pathname = usePathname()
   const commandes = useBrandSwitch(brandKey)
   // La signature nomme la société : elle suit `<html data-brand>`, posé dès le clic, plutôt que
   // le rendu serveur qui arrive une centaine de millisecondes plus tard.
   const brandAffichee = useBrandActif(brandKey)
-  const overHero = HERO_ROUTES.has(pathname)
+  const overHero = surLAccueil(pathname, locale)
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -233,12 +264,12 @@ export function Header({ nav, brandKey }: { nav: NavLink[]; brandKey: BrandKey }
         }`}
       >
         <Container className="flex h-full items-center justify-between gap-8">
-          <Link href="/" aria-label="Argentum — accueil" className="flex shrink-0 items-center">
+          <Link href={nav[0].href} aria-label={strings.nav.accueilAria} className="flex shrink-0 items-center">
             <Logo brand={brandAffichee} fond="sombre" />
           </Link>
 
-          <nav aria-label="Navigation principale" className="hidden lg:block">
-            <ul className="flex items-center gap-7">
+          <nav aria-label={strings.nav.navigationAria} className="hidden xl:block">
+            <ul className="flex items-center gap-6">
               {nav.map((link) => (
                 <li key={link.href}>
                   <DesktopEntry link={link} pathname={pathname} />
@@ -247,18 +278,21 @@ export function Header({ nav, brandKey }: { nav: NavLink[]; brandKey: BrandKey }
             </ul>
           </nav>
 
-          <div className="flex items-center gap-4">
-            {/* Le masquage est porté par ce conteneur : appliqué au composant, `hidden`
+          <div className="flex items-center gap-3">
+            {/* Le masquage est porté par ces conteneurs : appliqué au composant, `hidden`
                 entrerait en conflit avec son propre `inline-flex`. */}
             <div className="hidden sm:flex">
-              <BrandSwitcher commandes={commandes} onDark />
+              <BrandSwitcher commandes={commandes} locale={locale} strings={strings} onDark />
+            </div>
+            <div className="hidden sm:flex">
+              <LocaleSwitcher strings={strings} onDark />
             </div>
             <button
               type="button"
               onClick={() => setMenuOpen((open) => !open)}
               aria-expanded={menuOpen}
-              aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
-              className="-mr-2 p-2 text-white lg:hidden"
+              aria-label={menuOpen ? strings.nav.fermerMenu : strings.nav.ouvrirMenu}
+              className="-mr-2 p-2 text-white xl:hidden"
             >
               <span aria-hidden="true" className="block text-lg leading-none">
                 {menuOpen ? '✕' : '☰'}
@@ -273,6 +307,8 @@ export function Header({ nav, brandKey }: { nav: NavLink[]; brandKey: BrandKey }
           nav={nav}
           pathname={pathname}
           commandes={commandes}
+          locale={locale}
+          strings={strings}
           onClose={() => setMenuOpen(false)}
         />
       ) : null}

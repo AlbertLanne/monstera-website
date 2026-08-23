@@ -10,6 +10,8 @@
  * plutôt que d'afficher une valeur supposée.
  */
 
+import type { Locale } from '@/i18n/locales'
+
 export const BRAND_KEYS = ['investments', 'advisors'] as const
 
 export type BrandKey = (typeof BRAND_KEYS)[number]
@@ -34,8 +36,13 @@ export type Brand = {
   /** Numéro d'identification des entreprises. */
   uid: string | null
   address: PostalAddress | null
-  /** Secteur tel qu'inscrit au registre du commerce. */
-  sector: string
+  /**
+   * Secteur tel qu'inscrit au registre du commerce.
+   *
+   * Le registre genevois l'inscrit en français ; l'anglais et l'allemand sont des traductions,
+   * à faire confirmer par le client avant la mise en ligne — c'est une mention légale.
+   */
+  sector: Record<Locale, string>
   /** Dernière publication au registre du commerce. */
   lastPublication: string
   representative: string | null
@@ -46,7 +53,7 @@ export type Brand = {
   /** Différencie visuellement les deux entités sans sortir de la palette de marque. */
   theme: 'light' | 'dark'
   /** Résumé d'une ligne, utilisé en balise description et sur le sélecteur. */
-  tagline: string
+  tagline: Record<Locale, string>
 }
 
 const GENEVA_ADDRESS: PostalAddress = {
@@ -65,14 +72,22 @@ export const BRANDS: Record<BrandKey, Brand> = {
     registryUrl: 'https://www.moneyhouse.ch/en/company/argentum-investments-sa-4141745391',
     uid: 'CHE-134.341.014',
     address: GENEVA_ADDRESS,
-    sector: 'Exploitation de sociétés d’investissement',
+    sector: {
+      fr: 'Exploitation de sociétés d’investissement',
+      en: 'Operation of investment companies',
+      de: 'Betrieb von Investmentgesellschaften',
+    },
     lastPublication: '14.03.2019',
     representative: 'Andrew Silver',
-    email: 'contact@argentum-investments.ch',
+    email: 'contact@argentuminvestments.ch',
     phone: null,
-    domain: 'argentum-investments.ch',
+    domain: 'argentuminvestments.ch',
     theme: 'light',
-    tagline: 'Capital privé pour entreprises, projets et opportunités sélectionnés.',
+    tagline: {
+      fr: 'Capital privé pour entreprises, projets et opportunités sélectionnés.',
+      en: 'Private capital for selected companies, projects and opportunities.',
+      de: 'Privates Kapital für ausgewählte Unternehmen, Projekte und Gelegenheiten.',
+    },
   },
   advisors: {
     key: 'advisors',
@@ -83,14 +98,22 @@ export const BRANDS: Record<BrandKey, Brand> = {
     // Non communiqués par le client — voir la liste des données manquantes dans CLAUDE.md.
     uid: null,
     address: null,
-    sector: 'Prestations de services pour banques et établissements de crédit',
+    sector: {
+      fr: 'Prestations de services pour banques et établissements de crédit',
+      en: 'Services for banks and credit institutions',
+      de: 'Dienstleistungen für Banken und Kreditinstitute',
+    },
     lastPublication: '07.02.2019',
     representative: null,
-    email: 'contact@argentum-advisors.ch',
+    email: 'contact@argentumadvisors.ch',
     phone: null,
-    domain: 'argentum-advisors.ch',
+    domain: 'argentumadvisors.ch',
     theme: 'dark',
-    tagline: 'Prestations de services pour banques et établissements de crédit.',
+    tagline: {
+      fr: 'Prestations de services pour banques et établissements de crédit.',
+      en: 'Services for banks and credit institutions.',
+      de: 'Dienstleistungen für Banken und Kreditinstitute.',
+    },
   },
 }
 
@@ -103,7 +126,7 @@ export function isBrandKey(value: unknown): value is BrandKey {
   return typeof value === 'string' && (BRAND_KEYS as readonly string[]).includes(value)
 }
 
-/** Déduit l'entité du nom d'hôte : argentum-advisors.ch ouvre sur Advisors. */
+/** Déduit l'entité du nom d'hôte : argentumadvisors.ch ouvre sur Advisors. */
 export function brandFromHost(host: string | null | undefined): BrandKey | null {
   if (!host) return null
   const normalized = host.toLowerCase()
@@ -128,7 +151,7 @@ export function brandFromHost(host: string | null | undefined): BrandKey | null 
  */
 export function strictBrandFromHost(host: string | null | undefined): BrandKey | null {
   if (!host) return null
-  // Le port n'appartient pas au domaine : `argentum-advisors.ch:3000` reste le domaine réel.
+  // Le port n'appartient pas au domaine : `argentumadvisors.ch:3000` reste le domaine réel.
   const hostname = host.toLowerCase().split(':')[0].replace(/\.$/, '')
   for (const key of BRAND_KEYS) {
     const domain = BRANDS[key].domain

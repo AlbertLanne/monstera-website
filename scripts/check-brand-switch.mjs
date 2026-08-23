@@ -3,17 +3,28 @@
  *
  * Deux niveaux :
  *
- * 1. Le mécanisme — le thème change immédiatement, la raison sociale suit, et le choix survit à
- *    une navigation puis à un rechargement.
+ * 1. Le mécanisme — le sélecteur pointe vers le domaine de l'autre société, sur le même chemin,
+ *    et l'entité affichée tient sur toute la navigation puis sur un rechargement.
  * 2. Le balayage — sur les quatorze routes du site, aucune trace de la société qui n'est pas
  *    affichée : ni raison sociale, ni numéro de registre, ni UID, ni adresse e-mail, ni adresse
  *    postale. C'est le contrôle qui compte : une seule mention oubliée publie l'identité d'une
  *    société sur le site de l'autre.
  *
+ * Le sélecteur ne bascule plus sur place : chaque société a son domaine, et cliquer y mène. Ce
+ * contrôle ne peut donc pas cliquer — il quitterait le serveur de développement pour un domaine
+ * réel. Il pose le cookie d'entité, que `getBrandKey()` honore hors des vrais domaines, et
+ * vérifie séparément que les liens du sélecteur portent la bonne adresse.
+ *
  * Une exception, assumée, marquée `data-names-both-entities` : la section « deux sociétés » de
  * l'accueil, qui présente le groupe. Elle est retirée du texte balayé, pas ignorée — son contenu
  * est vérifié à part. La page Contact, elle, ne nomme plus que la société affichée : elle passe
  * le balayage sans exception.
+ *
+ * « Andrew Silver » a quitté les empreintes d'Investments le 23 août 2026 : il est représentant
+ * autorisé d'Investments au registre **et** CEO du groupe, présent sur la page Équipe des deux
+ * sociétés avec une adresse sur chaque domaine. Son nom seul ne désigne donc plus une entité. Ce
+ * qui engage l'entité, c'est la ligne « Représentant autorisé » du bloc d'identité légale — elle
+ * est vérifiée à part, section 6.
  *
  * Usage : node scripts/check-brand-switch.mjs [url]
  */
@@ -62,16 +73,26 @@ const EMPREINTES = {
     'Argentum Investments SA',
     'CH-660.0.244.019-9',
     'CHE-134.341.014',
-    'contact@argentum-investments.ch',
+    'contact@argentuminvestments.ch',
     'Marc-Doret',
-    'Andrew Silver',
   ],
   advisors: [
     'Argentum Advisors SA',
     'CH-660.0.242.019-2',
-    'contact@argentum-advisors.ch',
+    'contact@argentumadvisors.ch',
   ],
 }
+
+/** Les sept personnes livrées par le client — elles appartiennent au groupe, pas à une entité. */
+const MEMBRES = [
+  'Andrew Silver',
+  'Gabriel Silver',
+  'Matthias Bergman',
+  'Simon Adelstein',
+  'Vincent Meunier',
+  'Nathalie Berger',
+  'Sebastian Bühler',
+]
 
 const checks = []
 function check(label, actual, expected) {
@@ -107,9 +128,22 @@ async function texteDeLaPage() {
   })
 }
 
-/** Clique l'entité voulue dans le sélecteur de l'en-tête. */
-async function basculer(nomComplet) {
-  await page.getByRole('button', { name: nomComplet }).first().click()
+/**
+ * Affiche l'entité voulue.
+ *
+ * Hors des vrais domaines, l'entité vient du cookie : c'est le seul levier dont dispose ce
+ * contrôle depuis que le sélecteur redirige. Le cookie est posé pour l'origine testée, puis la
+ * page est rechargée pour que le serveur rejoue le rendu.
+ */
+async function afficher(marque, route = '/') {
+  await context.addCookies([{ name: 'argentum-brand', value: marque, url: BASE }])
+  await aller(page, `${BASE}${route}`)
+}
+
+/** Les liens du sélecteur d'entité de l'en-tête, par domaine visé. */
+async function liensDuSelecteur() {
+  const selecteur = page.getByRole('group', { name: 'Entité du groupe Argentum' }).first()
+  return selecteur.locator('a').evaluateAll((liens) => liens.map((a) => a.getAttribute('href')))
 }
 
 // --- 1. Mécanisme ----------------------------------------------------------
@@ -137,29 +171,41 @@ check(
   true,
 )
 
-// Hors des vrais domaines, la bascule reste un bouton : rediriger casserait la démonstration.
+// L'entité inactive est un lien vers son propre domaine, et l'entité affichée n'en est pas un.
+const liensAccueil = await liensDuSelecteur()
+check('sélecteur : un seul lien, celui de l’entité inactive', liensAccueil.length, 1)
 check(
-  'localhost : la bascule est un bouton, pas un lien',
-  await selecteur.locator('a').count(),
-  0,
+  'sélecteur : le lien vise le domaine d’Advisors',
+  liensAccueil[0],
+  'https://argentumadvisors.ch/',
 )
 
-await basculer('Argentum Advisors SA')
-await page.waitForFunction(() => document.documentElement.dataset.brand === 'advisors')
-check('après clic : thème basculé', await brandAttr(), 'advisors')
-
-await page.waitForFunction(
-  () => !document.querySelector('footer')?.innerText.includes('Argentum Investments SA'),
-  null,
-  { timeout: 10000 },
+// Le chemin courant est conservé : on doit arriver sur la même page chez l'autre société.
+await aller(page, `${BASE}/finance/capital-risque`)
+const liensSousPage = await liensDuSelecteur()
+check(
+  'sélecteur : le lien conserve le chemin courant',
+  liensSousPage[0],
+  'https://argentumadvisors.ch/finance/capital-risque',
 )
+
+await afficher('advisors')
+check('entité Advisors : thème', await brandAttr(), 'advisors')
 
 const footerApres = await page.locator('footer').innerText()
-check('après clic : footer nomme Advisors', footerApres.includes('Argentum Advisors SA'), true)
-check('après clic : registre Advisors', footerApres.includes('CH-660.0.242.019-2'), true)
-check('après clic : UID masqué faute de donnée', footerApres.includes('CHE-'), false)
-check('après clic : adresse masquée faute de donnée', footerApres.includes('Marc-Doret'), false)
-check('après clic : e-mail Advisors', footerApres.includes('contact@argentum-advisors.ch'), true)
+check('entité Advisors : footer nomme Advisors', footerApres.includes('Argentum Advisors SA'), true)
+check('entité Advisors : registre Advisors', footerApres.includes('CH-660.0.242.019-2'), true)
+check('entité Advisors : UID masqué faute de donnée', footerApres.includes('CHE-'), false)
+check('entité Advisors : adresse masquée faute de donnée', footerApres.includes('Marc-Doret'), false)
+check('entité Advisors : e-mail Advisors', footerApres.includes('contact@argentumadvisors.ch'), true)
+
+// Sur le site d'Advisors, le sélecteur renvoie vers Investments.
+const liensAdvisors = await liensDuSelecteur()
+check(
+  'sélecteur en Advisors : le lien vise le domaine d’Investments',
+  liensAdvisors[0],
+  'https://argentuminvestments.ch/',
+)
 
 // --- 2. Balayage des routes en Advisors -----------------------------------
 console.log('\n— Balayage des routes, entité affichée : Advisors')
@@ -178,15 +224,13 @@ await page.reload({ waitUntil: 'domcontentloaded' })
 check('rechargement : thème conservé', await brandAttr(), 'advisors')
 
 // --- 4. Retour en Investments et balayage symétrique -----------------------
-await aller(page, `${BASE}/`)
-await basculer('Argentum Investments SA')
-await page.waitForFunction(() => document.documentElement.dataset.brand === 'investments')
-await page.waitForFunction(
-  () => document.querySelector('footer')?.innerText.includes('Argentum Investments SA'),
-  null,
-  { timeout: 10000 },
-)
+await afficher('investments')
 check('retour : thème', await brandAttr(), 'investments')
+check(
+  'retour : footer nomme Investments',
+  (await page.locator('footer').innerText()).includes('Argentum Investments SA'),
+  true,
+)
 
 console.log('\n— Balayage des routes, entité affichée : Investments')
 for (const route of ROUTES) {
@@ -214,6 +258,88 @@ for (const [marque, nom, url] of [
     await page.locator('a[href*="moneyhouse.ch"]').count(),
     1,
   )
+}
+
+// --- 6. Représentant autorisé : une donnée du registre, pas un membre d'équipe ------
+// Andrew Silver figure sur la page Équipe des deux sociétés. En revanche il n'est représentant
+// autorisé qu'd'Investments : la ligne ne doit exister que là, et le bloc d'identité légale est
+// le seul endroit qui l'affirme.
+for (const [marque, attendu] of [
+  ['investments', true],
+  ['advisors', false],
+]) {
+  await afficher(marque, '/contact')
+  const bloc = page.locator('[data-legal-identity]').first()
+  const texte = await bloc.innerText()
+  // Les intitulés sont mis en capitales par le CSS, et `innerText` rend le texte tel qu'il
+  // s'affiche : la comparaison se fait en minuscules.
+  check(
+    `contact ${marque} : ligne « Représentant autorisé »`,
+    texte.toLowerCase().includes('représentant autorisé'),
+    attendu,
+  )
+  check(`contact ${marque} : le représentant nommé`, texte.includes('Andrew Silver'), attendu)
+}
+
+// --- 7. Page Équipe : les sept personnes, sur le domaine affiché -------------------
+for (const [marque, domaine] of [
+  ['investments', 'argentuminvestments.ch'],
+  ['advisors', 'argentumadvisors.ch'],
+]) {
+  await afficher(marque, '/notre-equipe')
+  const texte = await texteDeLaPage()
+  check(`équipe ${marque} : les sept personnes`, MEMBRES.filter((m) => texte.includes(m)).length, 7)
+  const adresses = await page
+    .locator('a[href^="mailto:"]')
+    .evaluateAll((liens) => liens.map((a) => a.getAttribute('href')))
+  const equipe = adresses.filter((h) => !h.includes('contact@'))
+  check(`équipe ${marque} : sept adresses e-mail`, equipe.length, 7)
+  check(
+    `équipe ${marque} : toutes sur ${domaine}`,
+    equipe.every((h) => h.endsWith(`@${domaine}`)),
+    true,
+  )
+}
+
+// --- 8. Les trois langues ne fuient pas davantage que le français -----------
+// Les empreintes d'entité — raison sociale, registre, UID, e-mail, adresse — ne sont pas
+// traduites : elles doivent rester absentes du site de l'autre société dans les trois langues.
+// Le balayage complet reste français ; ici on cible les pages qui portent des données légales.
+const ROUTES_LEGALES = [
+  '/',
+  '/contact',
+  '/notre-equipe',
+  '/impressum',
+  '/mentions-legales',
+  '/politique-de-confidentialite',
+]
+
+console.log('\n— Balayage anglais et allemand, entité affichée : Advisors')
+for (const prefixe of ['/en', '/de']) {
+  for (const route of ROUTES_LEGALES) {
+    const chemin = `${prefixe}${route === '/' ? '' : route}`
+    await afficher('advisors', chemin)
+    const texte = await texteDeLaPage()
+    const fuites = EMPREINTES.investments.filter((trace) => texte.includes(trace))
+    check(
+      `${chemin} : aucune trace d’Investments${fuites.length ? ` (${fuites.join(', ')})` : ''}`,
+      fuites.length,
+      0,
+    )
+  }
+}
+
+// --- 9. Sélecteur de langue : trois liens, vers les bons préfixes -----------
+for (const [depuis, attendus] of [
+  ['/contact', ['/en/contact', '/de/contact']],
+  ['/en/contact', ['/contact', '/de/contact']],
+  ['/de/finance', ['/finance', '/en/finance']],
+]) {
+  await aller(page, `${BASE}${depuis}`)
+  const selecteur = page.getByRole('group', { name: /Langue du site|Website language|Sprache der Website/ }).first()
+  const liens = await selecteur.locator('a').evaluateAll((els) => els.map((a) => a.getAttribute('href')))
+  check(`langue depuis ${depuis} : deux liens`, liens.length, 2)
+  check(`langue depuis ${depuis} : cibles`, liens.sort().join(' '), attendus.sort().join(' '))
 }
 
 await browser.close()

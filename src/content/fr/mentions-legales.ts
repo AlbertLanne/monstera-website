@@ -1,7 +1,7 @@
 // Généré depuis le contenu client (.odt) — ne pas éditer à la main.
 // Source : Mentions légales.odt
 // %BRAND% est résolu à l’exécution selon l’entité active.
-import type { PageContent } from './types'
+import type { PageContent } from '../types'
 
 export const mentions_legales: PageContent = {
   "slug": "mentions-legales",

@@ -1,7 +1,7 @@
 // Généré depuis le contenu client (.odt) — ne pas éditer à la main.
 // Source : Développement de projets.odt
 // %BRAND% est résolu à l’exécution selon l’entité active.
-import type { PageContent } from './types'
+import type { PageContent } from '../types'
 
 export const developpement_de_projets: PageContent = {
   "slug": "developpement-de-projets",

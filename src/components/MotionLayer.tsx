@@ -31,6 +31,27 @@ const A_REVELER = '[data-reveal]:not([data-revealed]), [data-mots]:not([data-rev
  */
 export const EVENEMENT_REJEU = 'argentum:rejouer-mouvement'
 
+/** Variables écrites sur un cadre survolé, et retirées quand il revient au repos. */
+const VARIABLES_SURVOL = ['--tilt-x', '--tilt-y', '--survol-dx', '--survol-dy', '--survol-zoom']
+
+/**
+ * Position lissée du survol, par cadre.
+ *
+ * `vise*` est la cible instantanée, le reste la valeur affichée qui la rattrape. Le `WeakMap` vit
+ * au niveau du module et non de l'effet : une navigation interne remonte l'effet, et repartir de
+ * zéro ferait sauter au repos une image que la souris n'a jamais quittée.
+ */
+type EtatSurvol = {
+  viseX: number
+  viseY: number
+  visePresence: number
+  x: number
+  y: number
+  presence: number
+}
+
+const ETATS_SURVOL = new WeakMap<HTMLElement, EtatSurvol>()
+
 /**
  * Apparition des blocs au défilement et parallaxe des images.
  *
@@ -129,12 +150,108 @@ export function MotionLayer() {
       window.addEventListener('resize', programmer)
     }
 
+    // --- Survol des photographies ------------------------------------------
+    // Le cadre s'incline vers le pointeur, l'image se déplace en sens contraire à l'intérieur et
+    // grossit un peu. Ce sont ces deux mouvements opposés qui produisent la profondeur : une
+    // inclinaison seule donne une carte qui gigote, un déplacement seul une image qui glisse à
+    // plat.
+    //
+    // Comme le reste du fichier, un seul écouteur pour toute la page plutôt qu'un composant
+    // client par image : les pages sont rendues sur le serveur et doivent le rester. Les
+    // composants posent `data-survol`, ce code écrit les variables, `globals.css` les compose
+    // avec la parallaxe dans une transformation unique.
+    const survolables = Array.from(document.querySelectorAll<HTMLElement>('[data-survol]'))
+    const finPointeur = window.matchMedia('(hover: hover) and (pointer: fine)').matches
+    const actifs = new Set<HTMLElement>()
+    let frameSurvol = 0
+
+    function etatDe(element: HTMLElement) {
+      let etat = ETATS_SURVOL.get(element)
+      if (!etat) {
+        etat = { viseX: 0, viseY: 0, visePresence: 0, x: 0, y: 0, presence: 0 }
+        ETATS_SURVOL.set(element, etat)
+      }
+      return etat
+    }
+
+    function surSurvol(event: PointerEvent) {
+      const cible = (event.target as Element | null)?.closest?.('[data-survol]') as HTMLElement | null
+      if (!cible) return
+      const boite = cible.getBoundingClientRect()
+      if (!boite.width || !boite.height) return
+      const etat = etatDe(cible)
+      // −1 au bord gauche/haut, +1 au bord droit/bas.
+      etat.viseX = Math.max(-1, Math.min(1, ((event.clientX - boite.left) / boite.width) * 2 - 1))
+      etat.viseY = Math.max(-1, Math.min(1, ((event.clientY - boite.top) / boite.height) * 2 - 1))
+      etat.visePresence = 1
+      actifs.add(cible)
+      relancerSurvol()
+    }
+
+    function surSortie(event: PointerEvent) {
+      const cible = event.currentTarget as HTMLElement
+      etatDe(cible).visePresence = 0
+      actifs.add(cible)
+      relancerSurvol()
+    }
+
+    function boucleSurvol() {
+      frameSurvol = 0
+      for (const element of Array.from(actifs)) {
+        const etat = etatDe(element)
+        const viseX = etat.viseX * etat.visePresence
+        const viseY = etat.viseY * etat.visePresence
+        etat.x += (viseX - etat.x) * 0.12
+        etat.y += (viseY - etat.y) * 0.12
+        etat.presence += (etat.visePresence - etat.presence) * 0.12
+
+        element.style.setProperty('--tilt-y', `${(etat.x * 6).toFixed(2)}deg`)
+        element.style.setProperty('--tilt-x', `${(-etat.y * 6).toFixed(2)}deg`)
+        // Écrites sur le cadre, lues sur l'image : les variables personnalisées héritent, et
+        // c'est ce qui évite d'aller chercher l'image dans le DOM à chaque mouvement.
+        element.style.setProperty('--survol-dx', `${(-etat.x * 18).toFixed(1)}px`)
+        element.style.setProperty('--survol-dy', `${(-etat.y * 18).toFixed(1)}px`)
+        element.style.setProperty('--survol-zoom', (1 + etat.presence * 0.06).toFixed(4))
+
+        const stable =
+          Math.abs(viseX - etat.x) < 0.002 &&
+          Math.abs(viseY - etat.y) < 0.002 &&
+          Math.abs(etat.visePresence - etat.presence) < 0.002
+        if (!stable) continue
+        actifs.delete(element)
+        // Revenu au repos : on retire les variables plutôt que de laisser des valeurs nulles
+        // traîner dans l'attribut `style`.
+        if (etat.visePresence === 0) {
+          for (const nom of VARIABLES_SURVOL) element.style.removeProperty(nom)
+        }
+      }
+      if (actifs.size) relancerSurvol()
+    }
+
+    function relancerSurvol() {
+      if (!frameSurvol) frameSurvol = requestAnimationFrame(boucleSurvol)
+    }
+
+    if (finPointeur && survolables.length > 0) {
+      window.addEventListener('pointermove', surSurvol, { passive: true })
+      // `pointerleave` par élément plutôt qu'un `pointerout` global : `pointerout` se déclenche
+      // aussi en passant d'un enfant à l'autre à l'intérieur du même cadre, et l'image
+      // retomberait au repos au milieu du survol.
+      for (const element of survolables) element.addEventListener('pointerleave', surSortie)
+    }
+
     return () => {
       observateur.disconnect()
       window.clearTimeout(secours)
       window.removeEventListener('scroll', programmer)
       window.removeEventListener('resize', programmer)
+      window.removeEventListener('pointermove', surSurvol)
+      for (const element of survolables) {
+        element.removeEventListener('pointerleave', surSortie)
+        for (const nom of VARIABLES_SURVOL) element.style.removeProperty(nom)
+      }
       if (frame) cancelAnimationFrame(frame)
+      if (frameSurvol) cancelAnimationFrame(frameSurvol)
     }
   }, [pathname, rejeu])
 

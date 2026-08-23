@@ -2,7 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 
-import type { ImageFiche } from '@/content/fr/fiche-images'
+import type { ImageFiche } from '@/content/fiche-images'
 
 /**
  * Une rangée « texte d'un côté, photographie de l'autre » — le gabarit des pages Finance.
@@ -110,28 +110,34 @@ function DemiImage({
     <div
       data-reveal
       data-reveal-delay="1"
+      data-survol
       {...{ 'data-reveal-masque': imageADroite ? '' : 'droite' }}
       aria-hidden={alt === '' ? 'true' : undefined}
       className={`relative isolate overflow-hidden lg:aspect-auto lg:min-h-full ${
         RAPPORTS[image.orientation] ?? RAPPORTS.paysage
       } ${imageADroite ? '' : 'lg:order-1'}`}
     >
-      <Image
-        src={image.src}
-        alt={alt}
-        sizes="(min-width: 1024px) 50vw, 100vw"
-        placeholder="blur"
-        data-parallax="6"
-        className="brand-media absolute inset-0 h-full w-full object-cover"
-      />
-      {/* Voile de marque. Il s'efface au survol quand la rangée est un lien : c'est le seul
-          mouvement de l'image, la parallaxe occupant déjà sa transformation. */}
-      <div
-        aria-hidden="true"
-        className={`absolute inset-0 bg-(image:--overlay-media) transition-opacity duration-500 ease-(--ease-out-quart) ${
-          survolable ? 'group-hover:opacity-0 group-focus-visible:opacity-0' : ''
-        }`}
-      />
+      {/* Enfant unique du cadre, et c'est voulu : c'est lui que le masque découpe et lui qui
+          glisse en sens contraire de l'ouverture. Le laisser porter par le cadre lui-même
+          rendrait la rangée invisible à `IntersectionObserver` — voir `globals.css`. En régime
+          premium il déborde latéralement, ce qui fournit la marge dans laquelle il glisse. */}
+      <div className="absolute inset-0">
+        <Image
+          src={image.src}
+          alt={alt}
+          sizes="(min-width: 1024px) 60vw, 120vw"
+          placeholder="blur"
+          data-parallax="6"
+          className="brand-media absolute inset-0 h-full w-full object-cover"
+        />
+        {/* Voile de marque. Il s'efface au survol quand la rangée est un lien. */}
+        <div
+          aria-hidden="true"
+          className={`absolute inset-0 bg-(image:--overlay-media) transition-opacity duration-500 ease-(--ease-out-quart) ${
+            survolable ? 'group-hover:opacity-0 group-focus-visible:opacity-0' : ''
+          }`}
+        />
+      </div>
     </div>
   )
 }

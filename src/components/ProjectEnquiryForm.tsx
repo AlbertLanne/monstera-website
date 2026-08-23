@@ -2,9 +2,11 @@
 
 import { useActionState } from 'react'
 
-import { submitEnquiry } from '@/app/contact/actions'
+import { submitEnquiry } from '@/app/[locale]/contact/actions'
 import { SubmitButton } from '@/components/ui/Button'
-import { CAPITAL_RANGES, ENQUIRY_DOMAINS, type EnquiryState } from '@/domain/project-enquiry'
+import type { Choix, EnquiryState } from '@/domain/project-enquiry'
+import type { Locale } from '@/i18n/locales'
+import type { UIStrings } from '@/i18n/ui'
 
 const FIELD =
   'w-full rounded-(--radius-md) border border-line bg-surface px-4 py-3 text-[0.9375rem] ' +
@@ -51,9 +53,22 @@ function Field({
  * capitaux, utilisation prévue des fonds, présentation du projet. La demande part vers
  * l'adresse de l'entité active, résolue côté serveur dans l'action.
  */
-export function ProjectEnquiryForm({ email }: { email: string }) {
+export function ProjectEnquiryForm({
+  email,
+  locale,
+  strings,
+  domaines,
+  tranches,
+}: {
+  email: string
+  locale: Locale
+  strings: UIStrings
+  domaines: Choix[]
+  tranches: Choix[]
+}) {
   const [state, formAction, isPending] = useActionState(submitEnquiry, INITIAL)
   const errors = state.status === 'error' ? state.fieldErrors : undefined
+  const t = strings.formulaire
 
   if (state.status === 'success') {
     return (
@@ -62,16 +77,13 @@ export function ProjectEnquiryForm({ email }: { email: string }) {
         className="rounded-(--radius-md) border border-accent bg-page-alt p-8 sm:p-10"
       >
         <h2 className="font-(family-name:--font-display) text-[1.5rem] leading-snug">
-          Votre projet nous est parvenu.
+          {t.succesTitre}
         </h2>
         <p className="mt-4 max-w-[52ch] text-[0.9375rem] leading-[1.7] text-text-muted">
-          Nous procédons à une première évaluation afin de déterminer si le projet correspond au
-          profil d’investissement recherché. Sous réserve de la transmission complète des
-          informations requises, l’évaluation est généralement réalisée dans un délai de trois à
-          quatre semaines.
+          {t.succesTexte}
         </p>
         <p className="mt-4 text-[0.9375rem] text-text-muted">
-          Pour compléter votre dossier&nbsp;:{' '}
+          {t.succesComplement}{' '}
           <a
             href={`mailto:${email}`}
             className="text-accent-contrast underline decoration-line-strong decoration-1 underline-offset-4"
@@ -85,6 +97,9 @@ export function ProjectEnquiryForm({ email }: { email: string }) {
 
   return (
     <form action={formAction} noValidate className="space-y-6">
+      {/* La langue voyage avec la demande : l'action valide et accuse réception dans celle-ci. */}
+      <input type="hidden" name="locale" value={locale} />
+
       {state.status === 'error' ? (
         <p
           role="alert"
@@ -95,71 +110,71 @@ export function ProjectEnquiryForm({ email }: { email: string }) {
       ) : null}
 
       <div className="grid gap-6 sm:grid-cols-2">
-        <Field name="firstName" label="Prénom" errors={errors?.firstName}>
+        <Field name="firstName" label={t.prenom} errors={errors?.firstName}>
           <input id="firstName" name="firstName" autoComplete="given-name" required className={FIELD} />
         </Field>
-        <Field name="lastName" label="Nom" errors={errors?.lastName}>
+        <Field name="lastName" label={t.nom} errors={errors?.lastName}>
           <input id="lastName" name="lastName" autoComplete="family-name" required className={FIELD} />
         </Field>
-        <Field name="email" label="Adresse e-mail" errors={errors?.email}>
+        <Field name="email" label={t.email} errors={errors?.email}>
           <input id="email" name="email" type="email" autoComplete="email" required className={FIELD} />
         </Field>
-        <Field name="phone" label="Téléphone (facultatif)" errors={errors?.phone}>
+        <Field name="phone" label={t.telephone} errors={errors?.phone}>
           <input id="phone" name="phone" type="tel" autoComplete="tel" className={FIELD} />
         </Field>
-        <Field name="company" label="Société ou nom du projet" errors={errors?.company}>
+        <Field name="company" label={t.societe} errors={errors?.company}>
           <input id="company" name="company" autoComplete="organization" required className={FIELD} />
         </Field>
-        <Field name="country" label="Pays du projet (facultatif)" errors={errors?.country}>
+        <Field name="country" label={t.pays} errors={errors?.country}>
           <input id="country" name="country" autoComplete="country-name" className={FIELD} />
         </Field>
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2">
-        <Field name="domain" label="Domaine concerné" errors={errors?.domain}>
+        <Field name="domain" label={t.domaine} errors={errors?.domain}>
           <select id="domain" name="domain" required defaultValue="" className={FIELD}>
             <option value="" disabled>
-              Sélectionnez un domaine
+              {t.choisirDomaine}
             </option>
-            {ENQUIRY_DOMAINS.map((domain) => (
-              <option key={domain} value={domain}>
-                {domain}
+            {domaines.map((choix) => (
+              <option key={choix.value} value={choix.value}>
+                {choix.label}
               </option>
             ))}
           </select>
         </Field>
-        <Field name="capital" label="Besoin en capitaux" errors={errors?.capital}>
+        <Field name="capital" label={t.capitaux} errors={errors?.capital}>
           <select id="capital" name="capital" required defaultValue="" className={FIELD}>
             <option value="" disabled>
-              Sélectionnez une tranche
+              {t.choisirTranche}
             </option>
-            {CAPITAL_RANGES.map((range) => (
-              <option key={range} value={range}>
-                {range}
+            {tranches.map((choix) => (
+              <option key={choix.value} value={choix.value}>
+                {choix.label}
               </option>
             ))}
           </select>
         </Field>
       </div>
 
-      <Field name="useOfFunds" label="Utilisation prévue des fonds" errors={errors?.useOfFunds}>
+      <Field name="useOfFunds" label={t.utilisation} errors={errors?.useOfFunds}>
         <textarea id="useOfFunds" name="useOfFunds" rows={3} required className={FIELD} />
       </Field>
 
-      <Field name="message" label="Présentation du projet" errors={errors?.message}>
+      <Field name="message" label={t.presentation} errors={errors?.message}>
         <textarea
           id="message"
           name="message"
           rows={7}
           required
           className={FIELD}
-          placeholder="Situation économique et financière, structure existante, étapes de développement visées, actifs et garanties disponibles…"
+          placeholder={t.placeholderPresentation}
         />
       </Field>
 
       {/* Piège à robots : invisible et hors du parcours au clavier. */}
       <div aria-hidden="true" className="absolute h-0 w-0 overflow-hidden opacity-0">
-        <label htmlFor="website">Site web</label>
+        <label htmlFor="website">{t.siteWeb}</label>
         <input id="website" name="website" tabIndex={-1} autoComplete="off" />
       </div>
 
@@ -173,8 +188,7 @@ export function ProjectEnquiryForm({ email }: { email: string }) {
             className="mt-1 size-4 shrink-0 accent-[var(--brand)]"
           />
           <span className="text-[0.875rem] leading-[1.65] text-text-muted">
-            J’accepte que les informations transmises soient traitées de manière confidentielle en
-            vue de l’évaluation de mon projet, conformément à la politique de confidentialité.
+            {t.consentement}
           </span>
         </label>
         <FieldError errors={errors?.consent} />
@@ -182,13 +196,12 @@ export function ProjectEnquiryForm({ email }: { email: string }) {
 
       <div className="pt-2">
         <SubmitButton disabled={isPending}>
-          {isPending ? 'Envoi en cours…' : 'Soumettre le projet'}
+          {isPending ? t.envoiEnCours : t.envoyer}
         </SubmitButton>
       </div>
 
       <p className="text-[0.8125rem] leading-[1.7] text-text-muted">
-        La soumission d’un projet ne confère aucun droit à un financement et ne constitue ni un
-        engagement ni une garantie de mise à disposition de capitaux.
+        {t.avertissement}
       </p>
     </form>
   )

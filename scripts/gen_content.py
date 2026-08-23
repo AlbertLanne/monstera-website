@@ -1,8 +1,13 @@
 """Genere les fichiers de contenu TypeScript du site Argentum a partir de blocks.json.
 
-Chaque .odt du client devient un module `src/content/fr/<slug>.ts` exportant un PageContent.
+Chaque .odt du client devient un module `src/content/<langue>/<slug>.ts` exportant un PageContent.
 Les mentions de la raison sociale deviennent le jeton %BRAND%, resolu a l'execution selon
 l'entite active (Investments ou Advisors).
+
+Trois langues. Le client a livre les memes vingt fiches en francais, en anglais et en allemand :
+les slugs, l'ordre des pages et la structure des blocs sont donc communs, seuls changent le
+fichier source, le libelle de menu et les quelques chaines que les retouches doivent reconnaitre.
+C'est ce que decrit LOCALES.
 """
 import json
 import os
@@ -14,29 +19,164 @@ OUT = sys.argv[1]
 
 BRAND_TOKEN = "%BRAND%"
 
-# .odt source -> (slug, titre de menu). L'ordre fixe l'ordre du sous-menu Finance.
-PAGES = [
-    ("Acceuil.odt", "accueil", "Accueil"),
-    ("Services.odt", "services", "Services"),
-    ("Service.imobilier.odt", "services-immobilier", "Services immobilier"),
-    ("Financement immobilier.odt", "financement-immobilier", "Financement immobilier"),
-    ("Capital-investissement.odt", "capital-investissement", "Capital-investissement"),
-    ("Ventuere Capital.odt", "capital-risque", "Capital-risque"),
-    ("Investissements dans les start-up.odt", "investissements-start-up", "Investissements start-up"),
-    ("Mezzanine Capital.odt", "mezzanine-capital", "Mezzanine Capital"),
-    ("Développement de projets.odt", "developpement-de-projets", "Développement de projets"),
-    ("Énergies renouvelables.odt", "energies-renouvelables", "Énergies renouvelables"),
-    ("Médecine & Pharma.odt", "medecine-pharma", "Médecine & Pharma"),
-    ("Solutions technologiques & E-Mobilité.odt", "solutions-technologiques-e-mobilite",
-     "Solutions technologiques & E-Mobilité"),
-    ("Crowdfunding.odt", "crowdfunding", "Crowdfunding"),
-    ("a propos.odt", "a-propos", "À propos"),
-    ("Discrétion & Confidentialité.odt", "discretion", "Discrétion"),
-    ("Notre Équipe.odt", "notre-equipe", "Notre équipe"),
-    ("Mentions légales.odt", "mentions-legales", "Mentions légales"),
-    ("Mentions légales (Impressum).odt", "impressum", "Impressum"),
-    ("Politique de confidentialité.odt", "politique-de-confidentialite", "Politique de confidentialité"),
+# Ordre commun aux trois langues. Il fixe l'ordre du sous-menu Finance : par priorite
+# commerciale decroissante, Crowdfunding en dernier.
+SLUGS = [
+    "accueil",
+    "services",
+    "services-immobilier",
+    "finance",
+    "financement-immobilier",
+    "capital-investissement",
+    "capital-risque",
+    "investissements-start-up",
+    "mezzanine-capital",
+    "developpement-de-projets",
+    "energies-renouvelables",
+    "medecine-pharma",
+    "solutions-technologiques-e-mobilite",
+    "crowdfunding",
+    "a-propos",
+    "discretion",
+    "notre-equipe",
+    "mentions-legales",
+    "impressum",
+    "politique-de-confidentialite",
 ]
+
+# slug -> (fichier source dans le dossier de la langue, libelle de menu).
+# Les libelles viennent des titres que le client a lui-meme donnes a ses documents.
+FR = {
+    "accueil": ("Acceuil.odt", "Accueil"),
+    "services": ("Services.odt", "Services"),
+    "services-immobilier": ("Service.imobilier.odt", "Services immobilier"),
+    "finance": ("Financement.odt", "Finance"),
+    "financement-immobilier": ("Financement immobilier.odt", "Financement immobilier"),
+    "capital-investissement": ("Capital-investissement.odt", "Capital-investissement"),
+    "capital-risque": ("Ventuere Capital.odt", "Capital-risque"),
+    "investissements-start-up": ("Investissements dans les start-up.odt", "Investissements start-up"),
+    "mezzanine-capital": ("Mezzanine Capital.odt", "Mezzanine Capital"),
+    "developpement-de-projets": ("Développement de projets.odt", "Développement de projets"),
+    "energies-renouvelables": ("Énergies renouvelables.odt", "Énergies renouvelables"),
+    "medecine-pharma": ("Médecine & Pharma.odt", "Médecine & Pharma"),
+    "solutions-technologiques-e-mobilite": ("Solutions technologiques & E-Mobilité.odt",
+                                            "Solutions technologiques & E-Mobilité"),
+    "crowdfunding": ("Crowdfunding.odt", "Crowdfunding"),
+    "a-propos": ("a propos.odt", "À propos"),
+    "discretion": ("Discrétion & Confidentialité.odt", "Discrétion"),
+    "notre-equipe": ("Notre Équipe.odt", "Notre équipe"),
+    "mentions-legales": ("Mentions légales.odt", "Mentions légales"),
+    "impressum": ("Mentions légales (Impressum).odt", "Impressum"),
+    "politique-de-confidentialite": ("Politique de confidentialité.odt", "Politique de confidentialité"),
+}
+
+EN = {
+    "accueil": ("HOMW.odt", "Home"),
+    "services": ("Service.odt", "Services"),
+    "services-immobilier": ("Service. Real Estate.odt", "Real Estate"),
+    "finance": ("Financing odt..odt", "Financing"),
+    "financement-immobilier": ("Real Estate Financing.odt", "Real Estate Financing"),
+    "capital-investissement": ("Private Equity.odt", "Private Equity"),
+    "capital-risque": ("Ventuere Capital.odt", "Venture Capital"),
+    "investissements-start-up": ("Start-up Investments.odt", "Start-up Investments"),
+    "mezzanine-capital": ("Mezzanine Capital.odt", "Mezzanine Capital"),
+    "developpement-de-projets": ("Project Development.odt", "Project Development"),
+    "energies-renouvelables": ("Renewable Energy.odt", "Renewable Energy"),
+    "medecine-pharma": ("Medicine & Pharma.odt", "Medicine & Pharma"),
+    "solutions-technologiques-e-mobilite": ("Technology Solutions & E-Mobility.odt",
+                                            "Technology Solutions & E-Mobility"),
+    "crowdfunding": ("Crowdfunding.odt", "Crowdfunding"),
+    "a-propos": ("About Us.odt", "About Us"),
+    "discretion": ("Discretion & Confidentiality.odt", "Discretion"),
+    "notre-equipe": ("Our Team.odt", "Our Team"),
+    "mentions-legales": ("Legal Notice.odt", "Legal Notice"),
+    "impressum": ("Legal Notice (Imprint).odt", "Imprint"),
+    "politique-de-confidentialite": ("Privacy Policy.odt", "Privacy Policy"),
+}
+
+DE = {
+    "accueil": ("Startseite.odt", "Startseite"),
+    "services": ("Service.odt", "Services"),
+    "services-immobilier": ("Service.Immobilien.odt", "Immobilien"),
+    "finance": ("Finanzierung odt.odt", "Finanzierung"),
+    "financement-immobilier": ("Immobilienfinanzierung.odt", "Immobilienfinanzierung"),
+    "capital-investissement": ("Private Equity.odt", "Private Equity"),
+    "capital-risque": ("Ventuere Capital.odt", "Venture Capital"),
+    "investissements-start-up": ("Start-up Investments.odt", "Start-up Investments"),
+    "mezzanine-capital": ("Mezzanine-Kapital.odt", "Mezzanine-Kapital"),
+    "developpement-de-projets": ("Projektentwicklung.odt", "Projektentwicklung"),
+    "energies-renouvelables": ("Erneuerbare Energien.odt", "Erneuerbare Energien"),
+    "medecine-pharma": ("Medizin & Pharma.odt", "Medizin & Pharma"),
+    "solutions-technologiques-e-mobilite": ("Technologie Solutions & Elektromobilität.odt",
+                                            "Technologie Solutions & Elektromobilität"),
+    "crowdfunding": ("Crowdfunding.odt", "Crowdfunding"),
+    "a-propos": ("über uns.odt", "Über uns"),
+    "discretion": ("Diskretion & Vertraulichkeit.odt", "Diskretion"),
+    "notre-equipe": ("Unser Team.odt", "Unser Team"),
+    "mentions-legales": ("Rechtliche Hinweise.odt", "Rechtliche Hinweise"),
+    "impressum": ("Impressum.odt", "Impressum"),
+    "politique-de-confidentialite": ("Datenschutzerklärung.odt", "Datenschutzerklärung"),
+}
+
+# Chaines que les retouches doivent reconnaitre ou produire, par langue.
+# Celles marquees « ecrit par nous » n'existent dans aucun document client : ce sont les seules
+# de ce fichier a avoir ete traduites par IA.
+TEXTS = {
+    "fr": {
+        "hosting_label": "hébergement",
+        "services_label": "Services effectivement",
+        "updated_label": "Dernière mise à jour",
+        "hosting_todo": "Prestataire d’hébergement à confirmer",          # ecrit par nous
+        "services_term": "Services tiers utilisés :",                      # ecrit par nous
+        "services_text": "Ce site n’utilise aucun service de mesure d’audience, aucune régie "
+                         "publicitaire et aucun cookie de suivi. Seuls des cookies techniques "
+                         "strictement nécessaires au fonctionnement du site sont déposés.",
+        "updated_term": "Dernière mise à jour :",
+        "updated_value": "août 2026",
+        "team_title": "Notre équipe",
+        "about_title": "À propos",
+    },
+    "en": {
+        "hosting_label": "Hosting provider",
+        "services_label": "Services actually used",
+        "updated_label": "Last updated",
+        "hosting_todo": "Hosting provider to be confirmed",                # ecrit par nous
+        "services_term": "Third-party services used:",                     # ecrit par nous
+        "services_text": "This website uses no analytics service, no advertising network and no "
+                         "tracking cookies. Only technical cookies strictly necessary for the "
+                         "operation of the website are set.",
+        "updated_term": "Last updated:",
+        "updated_value": "August 2026",
+        "team_title": "Our Team",
+        "about_title": "About Us",
+    },
+    "de": {
+        "hosting_label": "Hosting-Anbieter",
+        "services_label": "Tatsächlich verwendete Dienste",
+        "updated_label": "Stand:",
+        "hosting_todo": "Hosting-Anbieter noch zu bestätigen",             # ecrit par nous
+        "services_term": "Verwendete Dienste Dritter:",                    # ecrit par nous
+        "services_text": "Diese Website verwendet keinen Analysedienst, kein Werbenetzwerk und "
+                         "keine Tracking-Cookies. Es werden ausschliesslich technisch notwendige "
+                         "Cookies gesetzt.",
+        "updated_term": "Stand:",
+        "updated_value": "August 2026",
+        "team_title": "Unser Team",
+        "about_title": "Über uns",
+    },
+}
+
+# Fiches maintenues a la main : la generation les laisse intactes.
+# `fr/mezzanine-capital` est la seule fiche que le client avait livree en anglais dans le lot
+# francais ; sa traduction a ete ecrite manuellement et serait perdue a chaque regeneration.
+# Les versions anglaise et allemande, elles, sont de vraies fiches livrees : on les genere.
+HAND_WRITTEN = {("fr", "mezzanine-capital")}
+
+LOCALES = {
+    "fr": {"dir": "", "pages": FR},
+    "en": {"dir": "en", "pages": EN},
+    "de": {"dir": "de", "pages": DE},
+}
 
 
 def detokenize(text):
@@ -56,16 +196,33 @@ def clean(node):
 
 
 def normalize_levels(blocks):
-    """Le premier H1 est le titre de page ; les H1 suivants sont des sections de meme rang."""
+    """Le premier titre du niveau le plus haut est le titre de page ; ses pairs sont des sections.
+
+    Le niveau de reference est **calcule**, pas suppose. Le client ne titre pas ses documents de
+    la meme facon dans les trois langues : `Diskretion & Vertraulichkeit.odt` ouvre sur un H2 et
+    place ses sections en H3, la ou les versions francaise et anglaise ouvrent sur un H1 avec des
+    sections en H2. Presumer H1 laissait la page allemande sans titre et decalait toutes ses
+    sections d'un cran.
+
+    Apres passage, les trois langues ont la meme forme : niveau 0 pour le titre, 2 pour les
+    sections, 3 et au-dela pour les sous-sections.
+    """
+    niveaux = [b["level"] for b in blocks if b["type"] == "heading"]
+    if not niveaux:
+        return blocks
+
+    base = min(niveaux)
     seen_title = False
     for b in blocks:
         if b["type"] != "heading":
             continue
-        if b["level"] == 1 and not seen_title:
+        if b["level"] == base and not seen_title:
             seen_title = True
             b["level"] = 0  # titre de page
-        elif b["level"] == 1:
+        elif b["level"] == base:
             b["level"] = 2
+        else:
+            b["level"] = 2 + (b["level"] - base - 1)
     return blocks
 
 
@@ -106,8 +263,9 @@ def same_heading(a, b):
 
     return norm(a) == norm(b)
 
-def patch_impressum(page):
-    """L'identite legale vient de la config de marque, pas du texte figé du .odt."""
+
+def patch_impressum(page, t):
+    """L'identite legale vient de la config de marque, pas du texte fige du .odt."""
     for section in page["sections"]:
         section["blocks"] = [
             {"type": "legalIdentity"} if b["type"] == "items" else b
@@ -123,7 +281,7 @@ def patch_impressum(page):
     return page
 
 
-def patch_privacy(page):
+def patch_privacy(page, t):
     """Responsable du traitement -> config de marque ; les autres trous sont documentes."""
     for section in page["sections"]:
         out = []
@@ -134,43 +292,61 @@ def patch_privacy(page):
             labels = " ".join(i["label"] for i in b["items"])
             if BRAND_TOKEN in labels:
                 out.append({"type": "legalIdentity"})
-            elif "hébergement" in labels:
-                out.append({"type": "todo", "note": "Prestataire d’hébergement à confirmer"})
-            elif "Services effectivement" in labels:
+            elif t["hosting_label"] in labels:
+                out.append({"type": "todo", "note": t["hosting_todo"]})
+            elif t["services_label"] in labels:
                 out.append({"type": "definitions", "items": [{
-                    "label": "Services tiers utilisés :",
-                    "text": "Ce site n’utilise aucun service de mesure d’audience, aucune régie "
-                            "publicitaire et aucun cookie de suivi. Seuls des cookies techniques "
-                            "strictement nécessaires au fonctionnement du site sont déposés.",
+                    "label": t["services_term"],
+                    "text": t["services_text"],
                 }]})
-            elif "Dernière mise à jour" in labels:
+            elif t["updated_label"] in labels:
                 out.append({"type": "definitions", "items": [
-                    {"label": "Dernière mise à jour :", "text": "août 2026"}]})
+                    {"label": t["updated_term"], "text": t["updated_value"]}]})
             else:
                 out.append(b)
         section["blocks"] = out
     return page
 
 
-def patch_team(page):
-    """La grille des partenaires est retiree : le client n'a fourni que des placeholders.
+def patch_team(page, t):
+    """La grille des partenaires est retiree du contenu genere.
+
+    Le client n'a livre dans la fiche que des placeholders `[Prenom Nom]`. Les sept personnes
+    reelles sont arrivees a part, dans `TEAM NAME.odt`, et vivent dans `src/config/equipe.ts` :
+    la page les rend elle-meme, dans les trois langues, avec l'adresse resolue par entite.
 
     La fiche n'a pas de H1 : elle ouvre sur un H2 homonyme, dont le texte devient le chapeau de
     la page pour ne pas afficher deux fois le meme titre.
     """
     page["sections"] = [s for s in page["sections"] if s["level"] < 3]
     first = page["sections"][0] if page["sections"] else None
-    if first and same_heading(first["title"], page["title"] or "Notre équipe"):
+    if first and same_heading(first["title"], page["title"] or t["team_title"]):
         page["lead"] = [p for b in first["blocks"]
                         if b["type"] == "prose" for p in b["paragraphs"]]
         page["sections"] = page["sections"][1:]
-    page["title"] = page["title"] or "Notre équipe"
+    page["title"] = page["title"] or t["team_title"]
+    # Ce qui reste est la section de placeholders : elle ne contient aucune donnee.
+    page["sections"] = [s for s in page["sections"]
+                        if not placeholders_seuls(s)]
     return page
 
 
-def patch_about(page):
+def placeholders_seuls(section):
+    """Vrai si la section ne contient que des gabarits `[...]` non remplis."""
+    textes = []
+    for b in section["blocks"]:
+        if b["type"] == "prose":
+            textes.extend(b["paragraphs"])
+        elif b["type"] in ("items", "steps", "definitions"):
+            textes.extend(i.get("label", "") + " " + i.get("text", "") for i in b["items"])
+        elif b["type"] == "bullets":
+            textes.extend(b["items"])
+    return bool(textes) and all(t.strip().startswith("[") for t in textes if t.strip())
+
+
+def patch_about(page, t):
     """Le .odt titre la page avec la raison sociale ; on garde un titre editorial."""
-    page["title"] = "À propos"
+    page["title"] = t["about_title"]
     return page
 
 
@@ -185,48 +361,62 @@ BANNER = ("// Généré depuis le contenu client (.odt) — ne pas éditer à la
           "// Source : {src}\n"
           "// %BRAND% est résolu à l’exécution selon l’entité active.\n")
 
-# Fiches maintenues a la main : la generation les laisse intactes.
-# `mezzanine-capital` est la seule fiche livree en anglais ; sa traduction francaise a ete
-# ecrite manuellement et serait perdue a chaque regeneration.
-HAND_WRITTEN = {"mezzanine-capital"}
+
+def ident_of(slug):
+    return re.sub(r"[^a-z0-9]+", "_", slug)
+
+
+def generate(locale, data):
+    conf = LOCALES[locale]
+    out_dir = os.path.join(OUT, locale)
+    os.makedirs(out_dir, exist_ok=True)
+    prefix = f"{conf['dir']}/" if conf["dir"] else ""
+    t = TEXTS[locale]
+
+    written, skipped, missing = 0, [], []
+    for slug in SLUGS:
+        src, menu = conf["pages"][slug]
+        key = f"{prefix}{src}"
+
+        if (locale, slug) in HAND_WRITTEN:
+            skipped.append(slug)
+            continue
+        if key not in data:
+            missing.append(key)
+            continue
+
+        page = to_page(slug, menu, clean(data[key]))
+        if slug in PATCHES:
+            page = PATCHES[slug](page, t)
+        body = json.dumps(page, ensure_ascii=False, indent=2)
+        with open(os.path.join(out_dir, f"{slug}.ts"), "w") as fh:
+            fh.write(f"{BANNER.format(src=key)}import type {{ PageContent }} from '../types'\n\n"
+                     f"export const {ident_of(slug)}: PageContent = {body}\n")
+        written += 1
+
+    with open(os.path.join(out_dir, "index.ts"), "w") as fh:
+        fh.write(f"// Généré — registre des pages de contenu ({locale}).\n")
+        for slug in SLUGS:
+            fh.write(f"import {{ {ident_of(slug)} }} from './{slug}'\n")
+        fh.write("\nimport type { PageContent } from '../types'\n\n")
+        fh.write("export const pages = {\n")
+        for slug in SLUGS:
+            fh.write(f"  '{slug}': {ident_of(slug)},\n")
+        fh.write("} satisfies Record<string, PageContent>\n")
+
+    return written, skipped, missing
 
 
 def main():
     data = json.load(open(os.path.join(os.path.dirname(__file__), "blocks.json")))
-    os.makedirs(OUT, exist_ok=True)
-    index = []
-    skipped = []
-    for src, slug, menu in PAGES:
-        ident = re.sub(r"[^a-z0-9]+", "_", slug)
-        index.append((slug, ident, menu))
-
-        if slug in HAND_WRITTEN:
-            skipped.append(slug)
-            continue
-
-        page = to_page(slug, menu, clean(data[src]))
-        if slug in PATCHES:
-            page = PATCHES[slug](page)
-        body = json.dumps(page, ensure_ascii=False, indent=2)
-        with open(os.path.join(OUT, f"{slug}.ts"), "w") as fh:
-            fh.write(f"{BANNER.format(src=src)}import type {{ PageContent }} from './types'\n\n"
-                     f"export const {ident}: PageContent = {body}\n")
-
-    with open(os.path.join(OUT, "index.ts"), "w") as fh:
-        fh.write("// Généré — registre des pages de contenu.\n")
-        for slug, ident, _ in index:
-            fh.write(f"import {{ {ident} }} from './{slug}'\n")
-        fh.write("\nimport type { PageContent } from './types'\n\n")
-        fh.write("export const pages = {\n")
-        for slug, ident, _ in index:
-            fh.write(f"  '{slug}': {ident},\n")
-        fh.write("} satisfies Record<string, PageContent>\n\n")
-        fh.write("export type PageSlug = keyof typeof pages\n\n")
-        fh.write("export function getPage<S extends PageSlug>(slug: S): PageContent {\n")
-        fh.write("  return pages[slug]\n}\n")
-    print(f"{len(index) - len(skipped)} pages générées dans {OUT}")
-    if skipped:
-        print(f"conservées telles quelles (écrites à la main) : {', '.join(skipped)}")
+    for locale in LOCALES:
+        written, skipped, missing = generate(locale, data)
+        note = f"{locale} : {written} pages générées"
+        if skipped:
+            note += f" ; conservées à la main : {', '.join(skipped)}"
+        if missing:
+            note += f" ; SOURCE INTROUVABLE : {', '.join(missing)}"
+        print(note)
 
 
 if __name__ == "__main__":

@@ -3,8 +3,9 @@ import { BlockRenderer, type Tone } from '@/components/blocks/BlockRenderer'
 import { planifierImages } from '@/components/media/plan-images'
 import { RangeeAlternee } from '@/components/media/RangeeAlternee'
 import { Container } from '@/components/ui/Container'
-import type { ImageFiche } from '@/content/fr/fiche-images'
-import type { Block, PageContent, Section } from '@/content/fr/types'
+import type { ImageFiche } from '@/content/fiche-images'
+import { pathnameForLocale, type Locale } from '@/i18n/locales'
+import type { Block, PageContent, Section } from '@/content/types'
 
 /**
  * Compare deux titres en ignorant casse et accents.
@@ -87,11 +88,13 @@ function SectionBlocks({
   brand,
   tone,
   ctaHref,
+  locale,
 }: {
   section: Section
   brand: Brand
   tone: Tone
   ctaHref: string
+  locale: Locale
 }) {
   return (
     <div className="space-y-8">
@@ -102,7 +105,7 @@ function SectionBlocks({
           data-reveal-delay={Math.min(index, 3)}
           className={WIDE.includes(block.type) ? '' : 'max-w-(--container-prose)'}
         >
-          <BlockRenderer block={block} brand={brand} tone={tone} ctaHref={ctaHref} />
+          <BlockRenderer block={block} brand={brand} locale={locale} tone={tone} ctaHref={ctaHref} />
         </div>
       ))}
     </div>
@@ -119,10 +122,12 @@ function CompactBody({
   page,
   brand,
   ctaHref,
+  locale,
 }: {
   page: PageContent
   brand: Brand
   ctaHref: string
+  locale: Locale
 }) {
   return (
     <section className="bg-page py-16 sm:py-20">
@@ -137,6 +142,7 @@ function CompactBody({
               ) : null}
               {section.blocks.map((block, blockIndex) => (
                 <BlockRenderer
+                  locale={locale}
                   key={blockIndex}
                   block={block}
                   brand={brand}
@@ -176,19 +182,24 @@ function peutPorterUneImage(section: Section, tone: Tone) {
 export function PageBody({
   page,
   brand,
-  ctaHref = '/contact',
+  locale,
+  ctaHref,
   compact = false,
   images = [],
 }: {
   page: PageContent
   brand: Brand
+  locale: Locale
+  /** Par défaut la page Contact de la langue courante. */
   ctaHref?: string
   /** Colonne continue plutôt que sections pleine largeur. Pour les pages juridiques. */
   compact?: boolean
   /** Images à répartir entre les sections. Voir `plan-images.ts`. */
   images?: ImageFiche[]
 }) {
-  if (compact) return <CompactBody page={page} brand={brand} ctaHref={ctaHref} />
+  const cible = ctaHref ?? pathnameForLocale('/contact', locale)
+
+  if (compact) return <CompactBody page={page} brand={brand} locale={locale} ctaHref={cible} />
 
   const sections = page.sections
   const tones = planTones(sections)
@@ -213,7 +224,7 @@ export function PageBody({
             />
           ) : null
         const blocs = (
-          <SectionBlocks section={section} brand={brand} tone={tone} ctaHref={ctaHref} />
+          <SectionBlocks section={section} brand={brand} locale={locale} tone={tone} ctaHref={cible} />
         )
 
         if (rangee) {

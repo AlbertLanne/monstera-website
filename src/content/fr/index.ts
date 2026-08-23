@@ -1,7 +1,8 @@
-// Généré — registre des pages de contenu.
+// Généré — registre des pages de contenu (fr).
 import { accueil } from './accueil'
 import { services } from './services'
 import { services_immobilier } from './services-immobilier'
+import { finance } from './finance'
 import { financement_immobilier } from './financement-immobilier'
 import { capital_investissement } from './capital-investissement'
 import { capital_risque } from './capital-risque'
@@ -19,12 +20,13 @@ import { mentions_legales } from './mentions-legales'
 import { impressum } from './impressum'
 import { politique_de_confidentialite } from './politique-de-confidentialite'
 
-import type { PageContent } from './types'
+import type { PageContent } from '../types'
 
 export const pages = {
   'accueil': accueil,
   'services': services,
   'services-immobilier': services_immobilier,
+  'finance': finance,
   'financement-immobilier': financement_immobilier,
   'capital-investissement': capital_investissement,
   'capital-risque': capital_risque,
@@ -42,9 +44,3 @@ export const pages = {
   'impressum': impressum,
   'politique-de-confidentialite': politique_de_confidentialite,
 } satisfies Record<string, PageContent>
-
-export type PageSlug = keyof typeof pages
-
-export function getPage<S extends PageSlug>(slug: S): PageContent {
-  return pages[slug]
-}

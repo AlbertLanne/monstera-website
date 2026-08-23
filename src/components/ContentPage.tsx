@@ -6,10 +6,12 @@ import { getBrand } from '@/brand/resolve'
 import { PageBody } from '@/components/PageBody'
 import { PageHero } from '@/components/PageHero'
 import { heroDePage, imagesDeCorps } from '@/config/images-pages'
-import { getPage, type PageSlug } from '@/content/fr'
+import { getPage, type PageSlug } from '@/content'
+import { getLocale } from '@/i18n/server'
 
 export type ContentPageProps = {
   slug: PageSlug
+  /** Par défaut, le libellé de menu de la fiche — déjà traduit par le client. */
   eyebrow?: string
   image?: StaticImageData
   imageAlt?: string
@@ -38,7 +40,8 @@ export async function ContentPage({
   compact,
 }: ContentPageProps) {
   const brand = await getBrand()
-  const page = getPage(slug)
+  const locale = await getLocale()
+  const page = getPage(locale, slug)
 
   // Une image passée par la page l'emporte sur celle du registre : les six photographies
   // livrées à l'origine par le client gardent leur page d'ouverture.
@@ -48,14 +51,21 @@ export async function ContentPage({
   return (
     <>
       <PageHero
-        eyebrow={eyebrow}
+        eyebrow={eyebrow ?? page.menu}
         title={page.title ?? page.menu}
         lead={page.lead}
         brand={brand}
         image={image ?? hero?.src}
-        imageAlt={image ? imageAlt : (hero?.alt ?? '')}
+        imageAlt={image ? imageAlt : (hero?.alt[locale] ?? '')}
       />
-      <PageBody page={page} brand={brand} ctaHref={ctaHref} compact={compact} images={corps} />
+      <PageBody
+        page={page}
+        brand={brand}
+        locale={locale}
+        ctaHref={ctaHref}
+        compact={compact}
+        images={corps}
+      />
     </>
   )
 }
@@ -63,7 +73,8 @@ export async function ContentPage({
 /** Balise title et description d'une fiche, avec la raison sociale de l'entité active. */
 export async function contentMetadata(slug: PageSlug): Promise<Metadata> {
   const brand = await getBrand()
-  const page = getPage(slug)
+  const locale = await getLocale()
+  const page = getPage(locale, slug)
   const description = page.lead[0] ?? page.title ?? undefined
 
   return {

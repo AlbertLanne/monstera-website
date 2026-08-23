@@ -3,7 +3,7 @@
 // Le vocabulaire est calqué sur les neuf autres pages Finance : « Du capital pour… »,
 // « à partir de 2 millions d’euros », « Nous accordons une importance particulière à… ».
 // %BRAND% est résolu à l’exécution selon l’entité active.
-import type { PageContent } from './types'
+import type { PageContent } from '../types'
 
 export const mezzanine_capital: PageContent = {
   slug: 'mezzanine-capital',

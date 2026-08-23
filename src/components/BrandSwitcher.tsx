@@ -2,6 +2,8 @@
 
 import { BRANDS, BRAND_KEYS, splitLegalName } from '@/brand/brands'
 import type { useBrandSwitch } from '@/brand/useBrandSwitch'
+import type { Locale } from '@/i18n/locales'
+import type { UIStrings } from '@/i18n/ui'
 
 /**
  * Bascule entre Argentum Investments SA et Argentum Advisors SA.
@@ -29,15 +31,17 @@ type Apparence = {
 
 export function BrandSwitcher({
   commandes,
+  locale,
+  strings,
   className = '',
   onDark = false,
-}: Apparence & { commandes: Commandes }) {
+}: Apparence & { commandes: Commandes; locale: Locale; strings: UIStrings }) {
   const { select, isPending, shown, redirects, hrefFor } = commandes
 
   return (
     <div
       role="group"
-      aria-label="Entité du groupe Argentum"
+      aria-label={strings.marque.selecteurAria}
       data-pending={isPending ? '' : undefined}
       className={`inline-flex items-stretch rounded-(--radius-md) border p-0.5 ${
         onDark ? 'border-white/30' : 'border-line'
@@ -80,7 +84,7 @@ export function BrandSwitcher({
           <a
             key={key}
             href={hrefFor(key)}
-            title={`${brand.legalName} — ${brand.tagline}`}
+            title={`${brand.legalName} — ${brand.tagline[locale]}`}
             className={shared}
           >
             {label}
@@ -91,7 +95,7 @@ export function BrandSwitcher({
             type="button"
             onClick={() => select(key)}
             aria-pressed={isActive}
-            title={`${brand.legalName} — ${brand.tagline}`}
+            title={`${brand.legalName} — ${brand.tagline[locale]}`}
             className={shared}
           >
             {label}

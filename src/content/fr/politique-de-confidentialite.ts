@@ -1,7 +1,7 @@
 // Généré depuis le contenu client (.odt) — ne pas éditer à la main.
 // Source : Politique de confidentialité.odt
 // %BRAND% est résolu à l’exécution selon l’entité active.
-import type { PageContent } from './types'
+import type { PageContent } from '../types'
 
 export const politique_de_confidentialite: PageContent = {
   "slug": "politique-de-confidentialite",

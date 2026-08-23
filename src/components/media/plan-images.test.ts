@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { planifierImages } from './plan-images'
-import type { ImageFiche, OrientationImage } from '@/content/fr/fiche-images'
+import type { ImageFiche, OrientationImage } from '@/content/fiche-images'
 
 /**
  * La répartition décide de ce que le visiteur voit en face de chaque paragraphe. Une erreur ici

@@ -139,57 +139,56 @@
    jamais serait un site vide.
    ======================================================================== */
 
-/* Quatre régimes sur une seule mécanique.
+/* Deux régimes, et un seul mécanisme.
 
-   L'intensité ne duplique pas les règles : elle ne change que des variables, lues plus bas par
-   l'apparition et par la parallaxe. Ajouter un régime revient à écrire quatre valeurs, pas à
-   réécrire une feuille. `sobre` est l'état livré au client en août 2026 ; les trois autres
-   répondent à sa demande d'un mouvement franchement visible sur téléphone.
+   `:root` porte le mouvement du site livré en août 2026 : un fondu et seize pixels de montée.
+   `premium` est la proposition, posée par `/demo-mouvement` sur `<html>` et par elle seule — le
+   reste du site ne bouge pas tant que le client n'a pas tranché.
 
-   L'attribut est posé sur `<html>` par le contrôle de la page de démonstration. En son absence,
-   les valeurs de `:root` s'appliquent : le site garde son mouvement d'origine. */
+   Les quatre paliers intermédiaires ont été retirés. Ils demandaient au client de comparer des
+   nuances de discrétion, ce qui l'a conduit à trouver l'ensemble timide : la question posée
+   n'était pas la bonne. Il n'en reste que l'existant et une proposition franche.
+
+   L'intensité ne duplique aucune règle : elle ne change que des variables, lues plus bas par
+   l'apparition, la parallaxe et le survol. */
 :root {
   --reveal-decalage-y: 16px;
   --reveal-decalage-x: 0px;
   --reveal-duree: 700ms;
   --reveal-cascade: 90ms;
+  --reveal-flou: 0px;
   --parallaxe-gain: 1;
   --parallaxe-zoom: 1.2;
+  /* Sortie très amortie : l'essentiel du déplacement se fait dans le premier tiers du temps,
+     puis la fin s'étire. C'est ce qui donne du poids à une entrée longue — une courbe
+     symétrique sur 1 seconde donnerait une glissade molle. */
+  --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-[data-motion-intensite='sobre-plus'] {
-  --reveal-decalage-y: 10px;
-  --reveal-decalage-x: 40px;
-  --reveal-duree: 760ms;
-  --reveal-cascade: 120ms;
+[data-motion-intensite='premium'] {
+  --reveal-decalage-y: 34px;
+  /* De 120 px sur un téléphone à 300 px sur un grand écran. La borne haute est un choix de
+     lisibilité : au-delà, le bloc part si loin qu'il traverse le champ au lieu d'y entrer. */
+  --reveal-decalage-x: clamp(120px, 18vw, 300px);
+  --reveal-duree: 1050ms;
+  --reveal-cascade: 180ms;
+  --reveal-flou: 10px;
+  --parallaxe-gain: 2.8;
+  --parallaxe-zoom: 1.5;
 }
 
-[data-motion-intensite='marque'] {
-  --reveal-decalage-y: 12px;
-  --reveal-decalage-x: 56px;
-  --reveal-duree: 880ms;
-  --reveal-cascade: 140ms;
-  --parallaxe-gain: 1.9;
-  --parallaxe-zoom: 1.38;
-}
-
-[data-motion-intensite='max'] {
-  --reveal-decalage-y: 14px;
-  --reveal-decalage-x: 72px;
-  --reveal-duree: 950ms;
-  --reveal-cascade: 160ms;
-  --parallaxe-gain: 2.6;
-  --parallaxe-zoom: 1.52;
-}
+/* --- Apparition --------------------------------------------------------------------------- */
 
 [data-motion='on'] [data-reveal] {
   opacity: 0;
   transform: translate3d(var(--reveal-dx, 0px), var(--reveal-decalage-y), 0);
+  filter: blur(var(--reveal-flou));
   /* Les couleurs restent de la partie : sans elles, la bascule d'entité perdrait son fondu
      sur les éléments porteurs d'une apparition. */
   transition:
-    opacity var(--reveal-duree) var(--ease-out-quart),
-    transform var(--reveal-duree) var(--ease-out-quart),
+    opacity var(--reveal-duree) var(--ease-premium),
+    transform var(--reveal-duree) var(--ease-premium),
+    filter var(--reveal-duree) var(--ease-premium),
     background-color 220ms var(--ease-out-quart),
     border-color 220ms var(--ease-out-quart),
     color 220ms var(--ease-out-quart);
@@ -197,12 +196,13 @@
 
 [data-motion='on'] [data-reveal][data-revealed] {
   opacity: 1;
-  transform: none;
+  transform: translate3d(0, 0, 0);
+  filter: blur(0px);
 }
 
 /* L'entrée latérale est commandée par la mise en page, pas décorative : dans une rangée, le
-   texte entre du côté opposé à sa photographie. À intensité `sobre`, `--reveal-decalage-x` vaut
-   zéro et l'attribut ne produit rien — le même balisage sert les quatre régimes. */
+   texte entre du côté opposé à sa photographie. À intensité normale, `--reveal-decalage-x` vaut
+   zéro et l'attribut ne produit rien — le même balisage sert les deux régimes. */
 [data-motion='on'] [data-reveal-from='gauche'] {
   --reveal-dx: calc(var(--reveal-decalage-x) * -1);
 }
@@ -222,87 +222,138 @@
   transition-delay: calc(var(--reveal-cascade) * 3);
 }
 
-/* Dévoilement par masque — à partir du régime « marqué ».
+/* --- Dévoilement des photographies -------------------------------------------------------- */
 
-   La photographie n'arrive plus en fondu : elle se découvre d'un bord à l'autre, comme un store
-   qu'on lève. C'est l'effet qui coûte le moins cher en perception de qualité — aucun pixel
-   supplémentaire, une seule propriété composée — et celui qui distingue le plus nettement un
-   site travaillé d'un site par défaut.
+/* La photographie n'arrive pas en fondu : elle se découvre d'un bord à l'autre, comme un store
+   qu'on lève, **pendant que l'image glisse en sens inverse dessous**. C'est ce décalage entre le
+   store et son contenu qui donne la profondeur : un masque seul reste plat, et c'est exactement
+   ce que le client a reproché à la version précédente.
 
-   Le déplacement est neutralisé sur ces éléments : cumuler une glissade et un dévoilement donne
-   un mouvement mou, où l'on ne lit plus ni l'un ni l'autre. */
-[data-motion='on'][data-motion-intensite='marque'] [data-reveal-masque],
-[data-motion='on'][data-motion-intensite='max'] [data-reveal-masque] {
+   Le déplacement d'ensemble est neutralisé sur ces blocs : cumuler une glissade et un
+   dévoilement donne un mouvement mou, où l'on ne lit plus ni l'un ni l'autre. Le flou aussi —
+   flouter une photographie de 50 vw coûte cher pour un effet que le masque rend invisible. */
+[data-motion='on'][data-motion-intensite='premium'] [data-reveal-masque] {
   --reveal-dx: 0px;
   --reveal-decalage-y: 0px;
+  --reveal-flou: 0px;
 }
 
-/* Le masque porte sur les **enfants**, jamais sur l'élément observé.
+/* Le masque porte sur l'**enfant**, jamais sur l'élément observé.
 
    Piège rencontré, et coûteux à diagnostiquer : un élément dont le `clip-path` réduit l'aire
    visible à zéro est rapporté hors champ par `IntersectionObserver`. Posé sur la cible
    elle-même, le masque produisait donc un blocage — la photographie ne pouvait pas s'ouvrir
-   parce qu'elle était fermée, et la rangée restait un rectangle blanc. Les deux enfants
-   — la photographie et le voile de marque — remplissent la même boîte et se découpent à
-   l'identique : le résultat visuel est le même, l'observateur voit une cible intacte. */
-[data-motion='on'][data-motion-intensite='marque'] [data-reveal-masque] > *,
-[data-motion='on'][data-motion-intensite='max'] [data-reveal-masque] > * {
+   parce qu'elle était fermée, et la rangée restait un rectangle blanc. L'enfant unique porte le
+   masque et le contre-mouvement ; l'observateur voit une cible intacte.
+
+   Le contre-mouvement est en pourcentage et l'enfant déborde de 8 % de chaque côté : c'est cette
+   marge qui empêche un vide d'apparaître au bord pendant la glissade, à toutes les largeurs. */
+[data-motion='on'][data-motion-intensite='premium'] [data-reveal-masque] > * {
+  --masque-dx: 6%;
+  /* Le débordement n'existe qu'ici : hors du régime premium, l'enfant reste `inset-0` et le
+     cadrage de la photographie sur le site livré n'est pas touché. */
+  inset-inline: -8%;
   clip-path: inset(0 100% 0 0);
-  transition: clip-path var(--reveal-duree) var(--ease-out-quart);
+  transform: translate3d(var(--masque-dx), 0, 0);
+  transition:
+    clip-path var(--reveal-duree) var(--ease-premium),
+    transform var(--reveal-duree) var(--ease-premium);
+  transition-delay: var(--reveal-cascade);
 }
 
-/* Le store se lève du côté du texte : l'image s'ouvre vers la page, pas vers le bord. */
-[data-motion='on'][data-motion-intensite='marque'] [data-reveal-masque='droite'] > *,
-[data-motion='on'][data-motion-intensite='max'] [data-reveal-masque='droite'] > * {
+/* Le store se lève du côté du texte : l'image s'ouvre vers la page, pas vers le bord. Et elle
+   glisse dans le sens contraire à celui de l'ouverture. */
+[data-motion='on'][data-motion-intensite='premium'] [data-reveal-masque='droite'] > * {
+  --masque-dx: -6%;
   clip-path: inset(0 0 0 100%);
 }
 
-[data-motion='on'][data-motion-intensite='marque'] [data-reveal-masque][data-revealed] > *,
-[data-motion='on'][data-motion-intensite='max'] [data-reveal-masque][data-revealed] > * {
+[data-motion='on'][data-motion-intensite='premium'] [data-reveal-masque][data-revealed] > * {
+  --masque-dx: 0%;
   clip-path: inset(0 0 0 0);
 }
 
-/* Titres mot à mot — à partir du régime « marqué ».
+/* --- Titres mot à mot ---------------------------------------------------------------------- */
 
-   La phrase se compose plutôt que d'apparaître d'un bloc. Réservé aux grands intertitres : sur
-   un paragraphe courant, l'effet devient illisible et ralentit la lecture. Le conteneur ne
-   s'anime pas lui-même, seuls ses mots — sans quoi la phrase ferait deux entrées. */
+/* La phrase se compose plutôt que d'apparaître d'un bloc, et chaque mot arrive de la gauche
+   comme le reste de la page. Réservé aux grands intertitres : sur un paragraphe courant, l'effet
+   devient illisible et ralentit la lecture. Le conteneur ne s'anime pas lui-même, seuls ses mots
+   — sans quoi la phrase ferait deux entrées. */
 [data-motion='on'] [data-mots] > span {
   display: inline-block;
 }
 
-[data-motion='on'][data-motion-intensite='marque'] [data-mots] > span,
-[data-motion='on'][data-motion-intensite='max'] [data-mots] > span {
+[data-motion='on'][data-motion-intensite='premium'] [data-mots] > span {
   opacity: 0;
-  transform: translate3d(0, 0.45em, 0);
+  transform: translate3d(-0.4em, 0.55em, 0);
+  filter: blur(8px);
   transition:
-    opacity 620ms var(--ease-out-quart),
-    transform 620ms var(--ease-out-quart);
-  transition-delay: calc(var(--i, 0) * 45ms);
+    opacity 820ms var(--ease-premium),
+    transform 820ms var(--ease-premium),
+    filter 820ms var(--ease-premium);
+  transition-delay: calc(var(--i, 0) * 65ms);
 }
 
 [data-motion='on'] [data-mots][data-revealed] > span {
   opacity: 1;
-  transform: none;
+  transform: translate3d(0, 0, 0);
+  filter: blur(0px);
 }
 
-/* Deux régimes de parallaxe.
+/* --- Parallaxe et survol des photographies -------------------------------------------------- */
 
-   Une couche découpée par son conteneur est agrandie : le déplacement puise dans cette marge,
+/* Une couche découpée par son conteneur est agrandie : le déplacement puise dans cette marge,
    sans quoi un vide apparaîtrait en haut ou en bas. La marge suit donc le gain d'intensité —
-   `--parallaxe-zoom` vaut 1.2 en régime sobre, 1.52 au maximum, de quoi couvrir l'amplitude de
-   9 % des composants une fois multipliée. Augmenter le gain sans le zoom découvrirait un vide.
+   `--parallaxe-zoom` vaut 1.2 en régime normal, 1.5 en premium, de quoi couvrir l'amplitude des
+   composants une fois multipliée. Augmenter le gain sans le zoom découvrirait un vide.
    Contrepartie à connaître : plus le zoom monte, plus l'image est recadrée.
 
-   Un élément flottant — une vignette de premier plan — passe `--parallax-zoom: 1` et se déplace
-   en entier. C'est l'écart entre les deux vitesses qui donne la profondeur. */
+   Un élément flottant passe `--parallax-zoom: 1` et se déplace en entier. C'est l'écart entre
+   les deux vitesses qui donne la profondeur.
+
+   Les quatre variables de survol (`--survol-*`) sont écrites par `MotionLayer` image par image.
+   Elles entrent dans **la même** transformation que la parallaxe : deux règles concurrentes sur
+   `transform` s'écraseraient, et l'image cesserait de suivre le défilement dès qu'on la survole.
+   Aucune transition ici : la parallaxe réécrit cette transformation à chaque image, une
+   transition la ferait traîner d'une seconde derrière le défilement. Le lissage est fait en
+   JavaScript, sur les variables. */
 [data-parallax] {
   will-change: transform;
 }
 
 [data-motion='on'] [data-parallax] {
-  transform: translate3d(0, calc(var(--parallax, 0%) * var(--parallaxe-gain)), 0)
-    scale(var(--parallax-zoom, var(--parallaxe-zoom, 1.2)));
+  transform: translate3d(
+      var(--survol-dx, 0px),
+      calc(var(--parallax, 0%) * var(--parallaxe-gain) + var(--survol-dy, 0px)),
+      0
+    )
+    scale(calc(var(--parallax-zoom, var(--parallaxe-zoom, 1.2)) * var(--survol-zoom, 1)));
+}
+
+/* L'inclinaison porte sur le cadre, le déplacement sur l'image : la photographie bouge **dans**
+   un cadre qui reste posé sur la grille. Les deux ensemble donnent la sensation d'une vitre
+   derrière laquelle quelque chose se déplace ; l'un sans l'autre donne soit une carte qui
+   gigote, soit une image qui glisse à plat.
+
+   La règle ne vise que l'état révélé : avant, c'est l'entrée qui possède la transformation, et
+   les deux se disputeraient la propriété. Sans souris sur l'élément, les angles valent zéro et
+   la transformation est l'identité — rien n'est perdu. */
+[data-motion='on'][data-motion-intensite='premium'] [data-survol][data-revealed] {
+  transform: perspective(1100px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  transform-style: preserve-3d;
+}
+
+/* --- Curseur sur mesure ---------------------------------------------------------------------- */
+
+/* Le drapeau est posé par `CurseurSurMesure` lui-même, et retiré à son démontage : si le
+   composant ne s'exécute pas — tactile, mouvement réduit, erreur — le pointeur système reste.
+   Masquer le curseur depuis une feuille de style sans garantie que quelque chose le remplace
+   laisserait un visiteur sans pointeur. */
+@media (min-width: 1024px) {
+  [data-curseur='sur-mesure'],
+  [data-curseur='sur-mesure'] * {
+    cursor: none;
+  }
 }
 
 /* Le halo du pointeur : additif sur le fond sombre d'Advisors, multiplicatif sur le blanc

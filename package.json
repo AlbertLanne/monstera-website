@@ -1,5 +1,5 @@
 {
-  "name": "argentum-investments.ch",
+  "name": "argentuminvestments.ch",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -8,8 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "content:extract": "python3 scripts/odt2blocks.py content-source/*.odt > scripts/blocks.json",
-    "content:build": "python3 scripts/gen_content.py src/content/fr",
+    "content:extract": "python3 scripts/odt2blocks.py content-source > scripts/blocks.json",
+    "content:build": "python3 scripts/gen_content.py src/content",
     "check:brand": "node scripts/check-brand-switch.mjs",
     "check:shots": "node scripts/screenshots.mjs .screenshots",
     "test": "vitest run",

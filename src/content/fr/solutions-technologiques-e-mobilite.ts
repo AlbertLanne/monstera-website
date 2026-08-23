@@ -1,7 +1,7 @@
 // Généré depuis le contenu client (.odt) — ne pas éditer à la main.
 // Source : Solutions technologiques & E-Mobilité.odt
 // %BRAND% est résolu à l’exécution selon l’entité active.
-import type { PageContent } from './types'
+import type { PageContent } from '../types'
 
 export const solutions_technologiques_e_mobilite: PageContent = {
   "slug": "solutions-technologiques-e-mobilite",

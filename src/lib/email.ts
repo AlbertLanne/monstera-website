@@ -1,6 +1,8 @@
 import nodemailer, { type Transporter } from 'nodemailer'
 
-import type { Brand } from '@/brand/brands'
+import { resolveBrandText, type Brand } from '@/brand/brands'
+import type { Locale } from '@/i18n/locales'
+import { UI } from '@/i18n/ui'
 
 /**
  * Acheminement SMTP des soumissions de projet.
@@ -67,7 +69,7 @@ export async function verifyTransporter(): Promise<void> {
  * Expéditeur des messages, propre à l'entité active quand il est défini.
  *
  * Les deux entités ont chacune leur domaine chez IONOS. Envoyer l'accusé de réception d'une
- * demande Advisors depuis une adresse `@argentum-investments.ch` désaligne l'expéditeur de la
+ * demande Advisors depuis une adresse `@argentuminvestments.ch` désaligne l'expéditeur de la
  * marque affichée, et fait échouer les contrôles SPF et DMARC du domaine d'envoi.
  *
  * `SMTP_FROM` reste le repli : un seul expéditeur suffit tant que le client n'a qu'une boîte.
@@ -163,52 +165,53 @@ export function buildEnquiryHtml(title: string, fields: MailField[]): string {
  * Message strictement transactionnel : il confirme la réception et reprend le délai d'évaluation
  * que le client annonce lui-même dans ses fiches. Rien n'y est promis au-delà.
  */
-export function buildAcknowledgement(brand: Brand, firstName: string, company: string) {
-  const subject = `${brand.legalName} — réception de votre demande`
+export function buildAcknowledgement(
+  brand: Brand,
+  locale: Locale,
+  firstName: string,
+  company: string,
+) {
+  const t = UI[locale].formulaire
+  const a = t.accuse
+  const pays = UI[locale].legal.pays
+  const subject = resolveBrandText(a.sujet, brand)
+
+  const confirmation = a.confirmation.replace('{company}', company)
+  const complement = a.complement.replace('{email}', brand.email)
+  // La version HTML fait de l'adresse un lien : la phrase est coupée autour du jeton.
+  const [avantAdresse, apresAdresse] = a.complement.split('{email}')
+  const avertissement = `${brand.legalName} ${UI[locale].legal.avertissement}`
 
   const text = [
-    `Bonjour ${firstName},`,
+    `${a.bonjour} ${firstName},`,
     '',
-    `Nous confirmons la réception de votre demande concernant « ${company} ».`,
+    confirmation,
     '',
-    'Nous procédons à une première évaluation afin de déterminer si le projet correspond au',
-    'profil d’investissement recherché. Sous réserve de la transmission complète des informations',
-    'requises, l’évaluation est généralement réalisée dans un délai de trois à quatre semaines.',
+    a.corps,
     '',
-    `Pour compléter votre dossier, vous pouvez répondre à ce message ou écrire à ${brand.email}.`,
+    complement,
     '',
+    a.signature,
     brand.legalName,
     ...(brand.address
-      ? [
-          brand.address.street,
-          `${brand.address.postalCode} ${brand.address.city}, ${brand.address.country}`,
-        ]
+      ? [brand.address.street, `${brand.address.postalCode} ${brand.address.city}, ${pays}`]
       : []),
     '',
-    `${brand.legalName} n’est ni une banque ni un établissement de crédit. La soumission d’un`,
-    'projet ne confère aucun droit à un financement et ne constitue ni un engagement ni une',
-    'garantie de mise à disposition de capitaux.',
+    avertissement,
   ].join('\n')
 
   const address = brand.address
-    ? `${escapeHtml(brand.address.street)}<br>${escapeHtml(brand.address.postalCode)} ${escapeHtml(brand.address.city)}, ${escapeHtml(brand.address.country)}`
+    ? `${escapeHtml(brand.address.street)}<br>${escapeHtml(brand.address.postalCode)} ${escapeHtml(brand.address.city)}, ${escapeHtml(pays)}`
     : ''
 
   const html = shell(
     subject,
-    `<p style="margin:0 0 16px">Bonjour ${escapeHtml(firstName)},</p>
-     <p style="margin:0 0 16px">Nous confirmons la réception de votre demande concernant
-       « ${escapeHtml(company)} ».</p>
-     <p style="margin:0 0 16px">Nous procédons à une première évaluation afin de déterminer si le
-       projet correspond au profil d’investissement recherché. Sous réserve de la transmission
-       complète des informations requises, l’évaluation est généralement réalisée dans un délai de
-       trois à quatre semaines.</p>
-     <p style="margin:0">Pour compléter votre dossier, vous pouvez répondre à ce message ou écrire à
-       <a href="mailto:${brand.email}" style="color:#1e3a8a">${escapeHtml(brand.email)}</a>.</p>`,
+    `<p style="margin:0 0 16px">${escapeHtml(a.bonjour)} ${escapeHtml(firstName)},</p>
+     <p style="margin:0 0 16px">${escapeHtml(confirmation)}</p>
+     <p style="margin:0 0 16px">${escapeHtml(a.corps)}</p>
+     <p style="margin:0">${escapeHtml(avantAdresse)}<a href="mailto:${brand.email}" style="color:#1e3a8a">${escapeHtml(brand.email)}</a>${escapeHtml(apresAdresse ?? '')}</p>`,
     `<p style="margin:0 0 12px"><strong style="color:#0d1b3d">${escapeHtml(brand.legalName)}</strong><br>${address}</p>
-     <p style="margin:0">${escapeHtml(brand.legalName)} n’est ni une banque ni un établissement de
-       crédit. La soumission d’un projet ne confère aucun droit à un financement et ne constitue ni
-       un engagement ni une garantie de mise à disposition de capitaux.</p>`,
+     <p style="margin:0">${escapeHtml(avertissement)}</p>`,
   )
 
   return { subject, text, html }

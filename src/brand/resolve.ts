@@ -30,7 +30,7 @@ const MARQUE_FIGEE = process.env.NEXT_PUBLIC_MARQUE_STATIQUE
  * approchant > Investments.
  *
  * Le domaine réel passe devant le cookie depuis que la bascule y est devenue une redirection :
- * une fois sur argentum-advisors.ch, le visiteur doit voir Advisors, même s'il avait cliqué
+ * une fois sur argentumadvisors.ch, le visiteur doit voir Advisors, même s'il avait cliqué
  * Investments plus tôt sur l'autre domaine. Hors de ces deux domaines — localhost, préproduction —
  * aucun hôte ne fait autorité et le cookie reprend son rôle, ce qui garde la bascule au clic
  * pour la démonstration.

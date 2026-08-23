@@ -81,9 +81,15 @@ def main():
     generated_at = sys.argv[1] if len(sys.argv) > 1 else None
     spec = {
         "$comment": "Généré par scripts/gen_site_spec.py — ne pas éditer à la main.",
-        "project": "argentum-investments.ch",
+        "project": "argentuminvestments.ch",
         "locale": "fr-CH",
-        "locales": ["fr"],
+        # Les trois langues prévues. `available` = contenu réellement traduit ;
+        # voir LOCALES_DISPONIBLES dans src/i18n/locales.ts, qui fait foi.
+        "locales": [
+            {"code": "fr", "prefix": "/", "available": True},
+            {"code": "en", "prefix": "/en", "available": True},
+            {"code": "de", "prefix": "/de", "available": True},
+        ],
         "indexing": {
             "noindex": True,
             "reason": "Exclusion totale demandée par le client.",
@@ -95,13 +101,13 @@ def main():
             {
                 "key": "investments",
                 "legalName": "Argentum Investments SA",
-                "domain": "argentum-investments.ch",
+                "domain": "argentuminvestments.ch",
                 "theme": "light",
             },
             {
                 "key": "advisors",
                 "legalName": "Argentum Advisors SA",
-                "domain": "argentum-advisors.ch",
+                "domain": "argentumadvisors.ch",
                 "theme": "dark",
             },
         ],
