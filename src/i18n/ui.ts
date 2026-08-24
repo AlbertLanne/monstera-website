@@ -223,7 +223,7 @@ const fr = {
     notreEquipe: 'Escalier en marbre d’un intérieur institutionnel élégant',
     finance: 'Le massif du Salève au-dessus du bassin genevois',
     contact: 'Le pont du Mont-Blanc sur le lac Léman à Genève',
-    financementImmobilier: 'Immeuble de bureaux vitré au milieu d’un tissu urbain résidentiel',
+    financementImmobilier: 'Façade incurvée d’un immeuble résidentiel moderne à Zurich',
     capitalInvestissement:
       'Reflet d’un clocher historique dans la façade vitrée d’un immeuble de bureaux à Genève',
     capitalRisque: 'Vue en contre-plongée de tours de bureaux vitrées modernes',
@@ -437,7 +437,7 @@ const en: UIStrings = {
     notreEquipe: 'Marble staircase in an elegant institutional interior',
     finance: 'The Salève massif above the Geneva basin',
     contact: 'The Mont-Blanc bridge over Lake Geneva',
-    financementImmobilier: 'Glazed office building within a residential urban fabric',
+    financementImmobilier: 'Curved facade of a modern residential building in Zurich',
     capitalInvestissement:
       'Reflection of a historic bell tower in the glass facade of a Geneva office building',
     capitalRisque: 'Low-angle view of modern glazed office towers',
@@ -649,7 +649,7 @@ const de: UIStrings = {
     notreEquipe: 'Marmortreppe in einem eleganten institutionellen Innenraum',
     finance: 'Das Salève-Massiv über dem Genfer Becken',
     contact: 'Die Pont du Mont-Blanc über dem Genfersee',
-    financementImmobilier: 'Verglastes Bürogebäude inmitten eines Wohnquartiers',
+    financementImmobilier: 'Geschwungene Fassade eines modernen Wohngebäudes in Zürich',
     capitalInvestissement:
       'Spiegelung eines historischen Kirchturms in der Glasfassade eines Genfer Bürogebäudes',
     capitalRisque: 'Untersicht moderner verglaster Bürotürme',
