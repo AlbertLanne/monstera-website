@@ -1,107 +1,119 @@
 'use client'
 
-import { BRANDS, BRAND_KEYS, splitLegalName } from '@/brand/brands'
+import { BRANDS, BRAND_KEYS, type BrandKey } from '@/brand/brands'
 import type { useBrandSwitch } from '@/brand/useBrandSwitch'
+import { Deroulant } from '@/components/ui/Deroulant'
 import type { Locale } from '@/i18n/locales'
 import type { UIStrings } from '@/i18n/ui'
 
 /**
- * Bascule entre Argentum Investments SA et Argentum Advisors SA.
+ * L'entité du groupe : ce qu'on consulte, et comment aller chez l'autre société.
  *
- * Les deux boutons portent la raison sociale complète : « Investments » et « Advisors » seuls ne
- * désignent aucune société, et ce sélecteur est le seul endroit du site où les deux entités
- * apparaissent côte à côte. Elles tiennent dans l'en-tête grâce au découpage sur deux lignes.
+ * **Ce n'est plus une bascule.** Deux pastilles côte à côte, dont une allumée, disent « onglet » —
+ * et c'était devenu faux le jour où le clic a cessé de changer l'affichage pour partir sur un
+ * autre nom de domaine. Le déclencheur énonce donc la société qu'on lit, et le panneau montre
+ * **l'adresse où mène chaque ligne**. Un visiteur qui s'apprête à quitter argentuminvestments.ch
+ * pour argentumadvisors.ch doit le voir avant de cliquer, pas le découvrir dans sa barre
+ * d'adresse.
  *
- * Sur un vrai domaine Argentum, l'entité inactive est un lien vers son propre domaine : le
- * visiteur voit l'adresse au survol et peut l'ouvrir dans un nouvel onglet. Ailleurs, c'est un
- * bouton qui bascule sur place — voir `useBrandSwitch`.
+ * Le secteur d'activité sous chaque raison sociale n'est pas décoratif : c'est ce qui distingue
+ * réellement les deux sociétés au registre du commerce, et donc ce qui aide à choisir.
  *
- * Le composant ne tient pas son propre état : l'en-tête affiche **deux** sélecteurs — la barre et
- * le tiroir mobile — qui doivent réagir ensemble à un même clic. C'est donc l'appelant qui tient
- * `useBrandSwitch` et le passe ici.
+ * Les deux lignes portent la **raison sociale complète** : « Investments » seul ne désigne aucune
+ * société. Hors des vrais domaines — export statique — la ligne inactive reste un bouton, faute
+ * d'adresse qui serve le site.
  */
 
 export type Commandes = ReturnType<typeof useBrandSwitch>
-
-type Apparence = {
-  className?: string
-  /** Au-dessus d'un fond sombre, les jetons de thème ne sont pas lisibles. */
-  onDark?: boolean
-}
 
 export function BrandSwitcher({
   commandes,
   locale,
   strings,
-  className = '',
-  onDark = false,
-}: Apparence & { commandes: Commandes; locale: Locale; strings: UIStrings }) {
+}: {
+  commandes: Commandes
+  locale: Locale
+  strings: UIStrings
+}) {
   const { select, isPending, shown, redirects, hrefFor } = commandes
+  const t = strings.marque
 
   return (
-    <div
-      role="group"
-      aria-label={strings.marque.selecteurAria}
-      data-pending={isPending ? '' : undefined}
-      className={`inline-flex items-stretch rounded-(--radius-md) border p-0.5 ${
-        onDark ? 'border-white/30' : 'border-line'
-      } ${className}`}
-    >
-      {BRAND_KEYS.map((key) => {
-        const brand = BRANDS[key]
-        const [prefix, rest] = splitLegalName(brand)
-        const isActive = key === shown
-        // Sur fond sombre, l'entité active est marquée au ciel et non au blanc : c'est la
-        // couleur d'accent des deux thèmes, et le blanc plein rendait la barre monocouleur.
-        const tone = onDark
-          ? isActive
-            ? 'bg-accent text-navy-950'
-            : 'text-white/70 hover:text-white'
-          : isActive
-            ? 'bg-brand text-on-brand'
-            : 'text-text-muted hover:text-accent-contrast'
+    <div data-brand-switcher data-pending={isPending ? '' : undefined}>
+      <Deroulant
+        aria={t.selecteurAria}
+        cote="gauche"
+        valeur={<span className="text-white/90">{BRANDS[shown].legalName}</span>}
+      >
+        {(fermer) => (
+          <ul>
+            {BRAND_KEYS.map((key) => {
+              const brand = BRANDS[key]
+              const actif = key === shown
+              const contenu = <Ligne brand={brand} actif={actif} locale={locale} />
 
-        const label = (
-          <>
-            <span
-              className={`block text-[0.5625rem] leading-none font-normal ${
-                isActive ? 'opacity-70' : 'opacity-55'
-              }`}
-            >
-              {prefix}
-            </span>
-            <span className="mt-0.5 block leading-none">{rest}</span>
-          </>
-        )
-
-        const shared =
-          'rounded-[calc(var(--radius-md)-1px)] px-3 py-1.5 text-center text-[0.6875rem] font-medium ' +
-          `uppercase tracking-[0.08em] transition-colors duration-200 ${tone}`
-
-        // Le domaine réel : un lien, avec tout ce qu'un lien apporte — survol qui montre
-        // l'adresse, ouverture dans un nouvel onglet, clic du milieu.
-        return redirects && !isActive ? (
-          <a
-            key={key}
-            href={hrefFor(key)}
-            title={`${brand.legalName} — ${brand.tagline[locale]}`}
-            className={shared}
-          >
-            {label}
-          </a>
-        ) : (
-          <button
-            key={key}
-            type="button"
-            onClick={() => select(key)}
-            aria-pressed={isActive}
-            title={`${brand.legalName} — ${brand.tagline[locale]}`}
-            className={shared}
-          >
-            {label}
-          </button>
-        )
-      })}
+              return (
+                <li key={key}>
+                  {redirects && !actif ? (
+                    <a href={hrefFor(key)} className={CLASSE(actif)} onClick={fermer}>
+                      {contenu}
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      aria-current={actif ? 'true' : undefined}
+                      onClick={() => {
+                        select(key)
+                        fermer()
+                      }}
+                      className={`w-full text-left ${CLASSE(actif)}`}
+                    >
+                      {contenu}
+                    </button>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </Deroulant>
     </div>
+  )
+}
+
+/**
+ * Le filet vertical au ciel marque la société affichée.
+ *
+ * C'est l'idiome déjà employé par le sous-menu Finance pour la page courante : le reprendre ici
+ * évite d'inventer un second vocabulaire de sélection dans le même en-tête.
+ */
+const CLASSE = (actif: boolean) =>
+  `block border-l-2 px-4 py-3 transition-colors duration-150 ${
+    actif ? 'border-accent bg-white/6' : 'border-transparent hover:border-accent hover:bg-white/6'
+  }`
+
+function Ligne({
+  brand,
+  actif,
+  locale,
+}: {
+  brand: (typeof BRANDS)[BrandKey]
+  actif: boolean
+  locale: Locale
+}) {
+  return (
+    <>
+      <span
+        className={`block text-[0.8125rem] leading-snug ${actif ? 'text-accent' : 'text-white'}`}
+      >
+        {brand.legalName}
+      </span>
+      <span className="mt-1 block text-[0.6875rem] leading-snug text-white/50">
+        {brand.sector[locale]}
+      </span>
+      <span className="mt-1.5 block text-[0.6875rem] tracking-[0.02em] text-white/35">
+        {brand.domain}
+      </span>
+    </>
   )
 }

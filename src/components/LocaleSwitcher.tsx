@@ -3,102 +3,94 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
+import { Deroulant } from '@/components/ui/Deroulant'
 import {
   LOCALES,
   LOCALE_INFO,
   localeDisponible,
   localeFromPathname,
   pathnameForLocale,
-  type Locale,
 } from '@/i18n/locales'
 import type { UIStrings } from '@/i18n/ui'
 
 /**
- * Sélecteur de langue — français, anglais, allemand.
+ * La langue du site — français, anglais, allemand.
  *
- * Les trois langues sont affichées dès maintenant, mais seules celles listées dans
- * `LOCALES_DISPONIBLES` sont cliquables. Le contenu n'existe qu'en français : rendre `/en/`
- * accessible aujourd'hui mènerait à une page anglaise entièrement rédigée en français, ce qui est
- * pire qu'un bouton visiblement à venir. Le jour de la traduction, ajouter la langue à
- * `LOCALES_DISPONIBLES` suffit — rien ici ne change.
+ * Chaque langue est un lien vers le même chemin traduit, jamais un bouton : une langue est une
+ * adresse, elle doit s'ouvrir dans un nouvel onglet et se partager. Le déclencheur porte le code
+ * de la langue lue ; le panneau nomme chaque langue **dans cette langue**, parce que c'est ainsi
+ * qu'un lecteur reconnaît la sienne sans la traduire mentalement.
  *
- * La langue indisponible reste **visible** plutôt que masquée : elle annonce au visiteur, et au
- * client pendant la recette, que les trois langues sont prévues.
- *
- * Chaque langue disponible est un vrai lien vers le même chemin traduit, jamais un bouton : la
- * langue est une adresse, elle doit s'ouvrir dans un nouvel onglet et se partager.
+ * `LOCALES_DISPONIBLES` reste l'interrupteur : une langue qui n'y figure pas s'affiche grisée,
+ * visible mais inerte. Elle annonce qu'elle est prévue sans mener à une page à moitié traduite.
  */
-
-const SHARED =
-  'rounded-[calc(var(--radius-md)-1px)] px-2 py-1.5 text-center text-[0.6875rem] font-medium ' +
-  'uppercase tracking-[0.08em] transition-colors duration-200'
-
-export function LocaleSwitcher({
-  strings,
-  className = '',
-  onDark = false,
-}: {
-  strings: UIStrings
-  className?: string
-  /** Au-dessus d'un fond sombre, les jetons de thème ne sont pas lisibles. */
-  onDark?: boolean
-}) {
+export function LocaleSwitcher({ strings }: { strings: UIStrings }) {
   const pathname = usePathname()
   const active = localeFromPathname(pathname)
 
-  function tone(locale: Locale, isActive: boolean, disponible: boolean) {
-    if (!disponible) return onDark ? 'text-white/35' : 'text-text-muted/45'
-    if (isActive) return onDark ? 'bg-accent text-navy-950' : 'bg-brand text-on-brand'
-    return onDark ? 'text-white/70 hover:text-white' : 'text-text-muted hover:text-accent-contrast'
-  }
-
   return (
-    <div
-      role="group"
-      aria-label={strings.langue.selecteurAria}
-      className={`inline-flex items-stretch rounded-(--radius-md) border p-0.5 ${
-        onDark ? 'border-white/30' : 'border-line'
-      } ${className}`}
+    <Deroulant
+      aria={strings.langue.selecteurAria}
+      cote="droite"
+      largeur="w-[11rem]"
+      valeur={
+        <span className="uppercase tracking-[0.1em] text-white/90">{LOCALE_INFO[active].code}</span>
+      }
     >
-      {LOCALES.map((locale) => {
-        const info = LOCALE_INFO[locale]
-        const disponible = localeDisponible(locale)
-        const isActive = locale === active
-        const classes = `${SHARED} ${tone(locale, isActive, disponible)}`
+      {(fermer) => (
+        <ul>
+          {LOCALES.map((locale) => {
+            const info = LOCALE_INFO[locale]
+            const actif = locale === active
+            const disponible = localeDisponible(locale)
 
-        if (!disponible) {
-          return (
-            <span
-              key={locale}
-              aria-disabled="true"
-              title={`${info.name} — ${strings.langue.bientot}`}
-              className={`${classes} cursor-not-allowed`}
-            >
-              {info.code}
-            </span>
-          )
-        }
+            const classe = `block border-l-2 px-4 py-2.5 text-[0.8125rem] leading-snug transition-colors duration-150 ${
+              actif
+                ? 'border-accent bg-white/6 text-accent'
+                : disponible
+                  ? 'border-transparent text-white/75 hover:border-accent hover:bg-white/6 hover:text-white'
+                  : 'border-transparent text-white/30'
+            }`
 
-        if (isActive) {
-          return (
-            <span key={locale} aria-current="true" title={info.name} className={classes}>
-              {info.code}
-            </span>
-          )
-        }
+            if (actif) {
+              return (
+                <li key={locale}>
+                  <span aria-current="true" className={classe}>
+                    {info.name}
+                  </span>
+                </li>
+              )
+            }
 
-        return (
-          <Link
-            key={locale}
-            href={pathnameForLocale(pathname, locale)}
-            hrefLang={info.htmlLang}
-            title={info.name}
-            className={classes}
-          >
-            {info.code}
-          </Link>
-        )
-      })}
-    </div>
+            if (!disponible) {
+              return (
+                <li key={locale}>
+                  <span
+                    aria-disabled="true"
+                    title={`${info.name} — ${strings.langue.bientot}`}
+                    className={`${classe} cursor-not-allowed`}
+                  >
+                    {info.name}
+                  </span>
+                </li>
+              )
+            }
+
+            return (
+              <li key={locale}>
+                <Link
+                  href={pathnameForLocale(pathname, locale)}
+                  hrefLang={info.htmlLang}
+                  onClick={fermer}
+                  className={classe}
+                >
+                  {info.name}
+                </Link>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </Deroulant>
   )
 }
