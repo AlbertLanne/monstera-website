@@ -73,7 +73,7 @@ export function TwoEntities({
   return (
     <section className="border-y border-line bg-page py-16 sm:py-20 lg:py-(--spacing-section)">
       <Container>
-        <div data-reveal className="mb-12 flex flex-col gap-5">
+        <div data-reveal data-reveal-from="gauche" className="mb-12 flex flex-col gap-5">
           <span aria-hidden="true" className="h-px w-14 bg-accent" />
           <h2 className="max-w-[34ch] text-[1.75rem] leading-[1.2] sm:text-[2.125rem]">
             {t.titre}
@@ -89,8 +89,15 @@ export function TwoEntities({
           {BRAND_KEYS.map((key) => {
             const brand = BRANDS[key]
             const isActive = key === shown
+            // Les deux entités entrent par des bords opposés : elles se font face dans la page,
+            // la direction dit qu'elles sont côte à côte et non l'une après l'autre.
             return (
-              <li key={key} data-reveal data-reveal-delay={key === 'investments' ? 1 : 2}>
+              <li
+                key={key}
+                data-reveal
+                data-reveal-from={key === 'investments' ? 'gauche' : 'droite'}
+                data-reveal-delay={key === 'investments' ? 1 : 2}
+              >
                 <article
                   aria-current={isActive ? 'true' : undefined}
                   className={`flex h-full flex-col gap-6 border-t p-7 transition-colors duration-200 sm:p-8 ${

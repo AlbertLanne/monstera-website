@@ -1,6 +1,8 @@
 import Image, { type StaticImageData } from 'next/image'
 
 import { resolveBrandText, type Brand } from '@/brand/brands'
+import { HeroPhotoWebGL } from '@/components/media/HeroPhotoWebGL'
+import { TitreAnime } from '@/components/media/TitreAnime'
 import { Container } from '@/components/ui/Container'
 
 /**
@@ -9,6 +11,20 @@ import { Container } from '@/components/ui/Container'
  * Avec `image`, le titre passe sur une photographie voilée en navy — les pages qui n'en ont pas
  * gardent un fond uni, ce qui est le cas de Discrétion & Confidentialité, où une photographie
  * de foule contredirait le propos.
+ *
+ * **Le shader de la page de démonstration est ici depuis le 26 août 2026.** Le client a tranché :
+ * le régime `premium` est celui du site. La photographie d'ouverture est donc passée dans
+ * `HeroPhotoWebGL` — déformation au pointeur, aberration chromatique, et surtout le balayage
+ * d'entrée de gauche à droite qui pose le vocabulaire latéral de la page avant tout défilement.
+ *
+ * Trois garde-fous portés par le composant lui-même, rien à faire ici : il ne se charge pas hors
+ * du régime `premium`, ni si le visiteur a demandé moins de mouvement, et `three` n'est alors
+ * jamais téléchargé. Le `<Image>` reste dessous dans tous les cas — il porte le LCP et sert de
+ * repli sans WebGL.
+ *
+ * `unoptimized` sur cette image n'est pas une négligence : c'est ce qui fait que le shader et la
+ * balise demandent **le même fichier**. Par `/_next/image`, le navigateur téléchargerait deux
+ * variantes de la même photographie sur le premier affichage.
  */
 export function PageHero({
   eyebrow,
@@ -45,11 +61,15 @@ export function PageHero({
             src={image}
             alt={imageAlt ?? ''}
             priority
-            sizes="150vw"
+            unoptimized
+            sizes="100vw"
             placeholder="blur"
             data-parallax="7"
-            className="brand-media absolute inset-0 -z-10 h-full w-full object-cover"
+            className="brand-media absolute inset-0 -z-30 h-full w-full object-cover"
           />
+          <HeroPhotoWebGL src={image.src} />
+          {/* Le voile passe **au-dessus** du canvas : sous lui, la déformation lessiverait le
+              dégradé qui rend le titre lisible. */}
           <div className="absolute inset-0 -z-10 bg-(image:--overlay-video)" />
         </>
       ) : null}
@@ -63,8 +83,11 @@ export function PageHero({
               }`
         }
       >
-        <div data-reveal className="flex flex-col gap-6">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-6">
+          {/* Surtitre, titre et chapeau entrent séparément, par la gauche et en cascade. Groupés
+              sous une seule révélation, ils arrivaient d'un bloc : c'est le décalage entre les
+              trois qui fait lire une ouverture plutôt qu'un fondu. */}
+          <div data-reveal data-reveal-from="gauche" className="flex items-center gap-4">
             <span
               aria-hidden="true"
               className={`h-px w-14 ${onImage ? 'bg-white/70' : 'bg-accent'}`}
@@ -80,16 +103,21 @@ export function PageHero({
             ) : null}
           </div>
 
-          <h1
+          <TitreAnime
+            as="h1"
+            texte={resolveBrandText(title, brand)}
             className={`max-w-[26ch] text-[2.25rem] leading-[1.1] sm:text-[3rem] lg:text-[3.5rem] ${
               onImage ? 'text-white' : 'text-text-strong'
             }`}
-          >
-            {resolveBrandText(title, brand)}
-          </h1>
+          />
 
           {lead?.length ? (
-            <div className="max-w-(--container-prose) space-y-4">
+            <div
+              data-reveal
+              data-reveal-from="gauche"
+              data-reveal-delay="2"
+              className="max-w-(--container-prose) space-y-4"
+            >
               {lead.map((paragraph, index) => (
                 <p
                   key={index}

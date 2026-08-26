@@ -9,6 +9,7 @@ import {
   GoogleTagManagerScript,
 } from '@/components/GoogleTagManager'
 import { Header } from '@/components/Header'
+import { CurseurSurMesure } from '@/components/CurseurSurMesure'
 import { CursorGlow } from '@/components/CursorGlow'
 import { MotionLayer } from '@/components/MotionLayer'
 import { mainNav } from '@/config/navigation'
@@ -100,9 +101,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const t = UI[locale]
 
   return (
+    /* `data-motion-intensite` est posé ici, au rendu serveur, et non par un composant client :
+       écrit dans un effet, il produisait un premier affichage sans le régime puis un saut. Rien
+       ne se déclenche pour autant tant que `MotionLayer` n'a pas posé `data-motion='on'` — tout
+       le CSS de mouvement exige les deux attributs, et sans JavaScript le site s'affiche
+       entièrement, sans effet. */
     <html
       lang={LOCALE_INFO[locale].htmlLang}
       data-brand={brand.key}
+      data-motion-intensite="premium"
       className={`${inter.variable} ${newsreader.variable}`}
     >
       <body className="flex min-h-dvh flex-col">
@@ -112,6 +119,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
         <MotionLayer />
         <CursorGlow />
+        <CurseurSurMesure />
 
         <a
           href="#contenu"

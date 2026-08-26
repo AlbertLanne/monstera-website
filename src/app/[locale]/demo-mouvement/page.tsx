@@ -1,10 +1,8 @@
 import type { Metadata } from 'next'
 
 import { getBrand } from '@/brand/resolve'
-import { CurseurSurMesure } from '@/components/CurseurSurMesure'
 import { PageBody } from '@/components/PageBody'
 import { HeroPhotoWebGL } from '@/components/media/HeroPhotoWebGL'
-import { RegimeMouvement } from '@/components/media/RegimeMouvement'
 import { TitreAnime } from '@/components/media/TitreAnime'
 import { Container } from '@/components/ui/Container'
 import { heroDePage, imagesDeCorps } from '@/config/images-pages'
@@ -20,11 +18,11 @@ import Image from 'next/image'
  * écran. La page reprend donc une vraie fiche — texte du .odt, photographies livrées, gabarit de
  * production — et ne change que le mouvement.
  *
- * **Une seule proposition, plus un sélecteur.** La première version offrait quatre intensités.
- * Le client les a toutes trouvées trop discrètes, ce qui disait surtout que la question était mal
- * posée : on lui demandait d'arbitrer entre des nuances de retenue. Il ne reste que le régime
- * `premium`, franc, à accepter ou à refuser. Le reste du site n'est pas touché tant qu'il n'a pas
- * tranché — l'attribut ne vit que le temps de cette page.
+ * **Le client a tranché le 26 août 2026 : c'est ce régime, sur tout le site.** `premium` est
+ * désormais posé sur `<html>` par la mise en page racine, et le shader d'ouverture vit dans
+ * `PageHero`. Cette page n'a donc plus rien de particulier — elle ne pose plus le régime
+ * elle-même, elle en hérite comme les autres. Elle ne sert plus qu'à comparer le mouvement sur
+ * une fiche bien dotée en photographies ; elle peut disparaître sans rien emporter.
  *
  * **Elle n'est reliée à rien.** Aucune entrée de menu, aucun lien depuis le site, et un
  * `noindex` explicite en plus des trois niveaux déjà posés. On y arrive par l'URL, elle
@@ -50,8 +48,6 @@ export default async function DemoMouvementPage() {
 
   return (
     <>
-      <RegimeMouvement />
-
       <section className="relative isolate overflow-hidden">
         {hero ? (
           <>
@@ -116,8 +112,6 @@ export default async function DemoMouvementPage() {
       </section>
 
       <PageBody page={page} brand={brand} locale={locale} images={corps} />
-
-      <CurseurSurMesure />
     </>
   )
 }
