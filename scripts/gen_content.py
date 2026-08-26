@@ -19,6 +19,9 @@ OUT = sys.argv[1]
 
 BRAND_TOKEN = "%BRAND%"
 
+# Paragraphes gardes dans le chapeau d'une fiche sans intertitre. Deux, comme l'accueil.
+CRYPTO_LEAD = 2
+
 # Ordre commun aux trois langues. Il fixe l'ordre du sous-menu Finance : par priorite
 # commerciale decroissante, Crowdfunding en dernier.
 SLUGS = [
@@ -36,6 +39,7 @@ SLUGS = [
     "medecine-pharma",
     "solutions-technologiques-e-mobilite",
     "crowdfunding",
+    "actifs-numeriques",
     "a-propos",
     "discretion",
     "notre-equipe",
@@ -62,6 +66,7 @@ FR = {
     "solutions-technologiques-e-mobilite": ("Solutions technologiques & E-Mobilité.odt",
                                             "Solutions technologiques & E-Mobilité"),
     "crowdfunding": ("Crowdfunding.odt", "Crowdfunding"),
+    "actifs-numeriques": ("Actifs numériques & Cryptomonnaies.odt", "Digital Assets"),
     "a-propos": ("a propos.odt", "À propos"),
     "discretion": ("Discrétion & Confidentialité.odt", "Discrétion"),
     "notre-equipe": ("Notre Équipe.odt", "Notre équipe"),
@@ -86,6 +91,7 @@ EN = {
     "solutions-technologiques-e-mobilite": ("Technology Solutions & E-Mobility.odt",
                                             "Technology Solutions & E-Mobility"),
     "crowdfunding": ("Crowdfunding.odt", "Crowdfunding"),
+    "actifs-numeriques": ("Digital Assets & Cryptocurrencies.odt", "Digital Assets"),
     "a-propos": ("About Us.odt", "About Us"),
     "discretion": ("Discretion & Confidentiality.odt", "Discretion"),
     "notre-equipe": ("Our Team.odt", "Our Team"),
@@ -110,6 +116,7 @@ DE = {
     "solutions-technologiques-e-mobilite": ("Technologie Solutions & Elektromobilität.odt",
                                             "Technologie Solutions & Elektromobilität"),
     "crowdfunding": ("Crowdfunding.odt", "Crowdfunding"),
+    "actifs-numeriques": ("Digitale Vermögenswerte & Kryptowährungen.odt", "Digital Assets"),
     "a-propos": ("über uns.odt", "Über uns"),
     "discretion": ("Diskretion & Vertraulichkeit.odt", "Diskretion"),
     "notre-equipe": ("Unser Team.odt", "Unser Team"),
@@ -135,6 +142,8 @@ TEXTS = {
         "updated_value": "août 2026",
         "team_title": "Notre équipe",
         "about_title": "À propos",
+        "crypto_hint": "ne constituent ni un conseil",
+        "crypto_todo": "Avertissement juridique de la fiche Digital Assets",
     },
     "en": {
         "hosting_label": "Hosting provider",
@@ -149,6 +158,8 @@ TEXTS = {
         "updated_value": "August 2026",
         "team_title": "Our Team",
         "about_title": "About Us",
+        "crypto_hint": "do not constitute investment",
+        "crypto_todo": "Legal disclaimer for the Digital Assets page — missing in the client document",
     },
     "de": {
         "hosting_label": "Hosting-Anbieter",
@@ -163,6 +174,8 @@ TEXTS = {
         "updated_value": "August 2026",
         "team_title": "Unser Team",
         "about_title": "Über uns",
+        "crypto_hint": "stellen weder eine Anlage",
+        "crypto_todo": "Rechtlicher Hinweis der Digital-Assets-Seite — im Kundendokument nicht vorhanden",
     },
 }
 
@@ -350,11 +363,71 @@ def patch_about(page, t):
     return page
 
 
+def repartir(items, n):
+    """Decoupe une liste en n groupes aussi egaux que possible, les plus gros d'abord."""
+    if not items:
+        return []
+    taille, reste = divmod(len(items), n)
+    groupes, debut = [], 0
+    for i in range(n):
+        fin = debut + taille + (1 if i < reste else 0)
+        if fin > debut:
+            groupes.append(items[debut:fin])
+        debut = fin
+    return groupes
+
+
+# Nombre de sections illustrees visees pour la fiche Digital Assets. Le gabarit pose une
+# photographie par section, cotes alternes : trois rangees donnent le rythme sans noyer un
+# texte qui reste court.
+CRYPTO_RANGEES = 3
+
+
+def patch_actifs_numeriques(page, t):
+    """
+    Met en page une fiche que le client a livree sans le moindre intertitre.
+
+    Les dix-neuf autres documents sont structures par des H2, et la generation en tire des
+    sections. Celui-ci est un texte suivi : tel quel, ses sept premiers paragraphes tombaient
+    dans le chapeau — qui en porte deux ailleurs sur le site — et le reste dans une section
+    unique, donc une seule photographie possible. Aucun mot n'est touche ici, seule leur
+    repartition l'est : deux paragraphes d'accroche, puis trois sections sans titre qui peuvent
+    chacune porter une image.
+
+    Second geste, l'avertissement. Le client a clos la version francaise par un paragraphe
+    juridique mais l'a omis en anglais et en allemand. En francais il est isole dans son propre
+    bloc, pour etre rendu comme les avertissements des autres fiches ; dans les deux langues ou
+    il manque, un `todo` le signale sans rien inventer. Un avertissement juridique ne se traduit
+    pas sans l'accord du client.
+    """
+    reste = page["lead"][CRYPTO_LEAD:]
+    page["lead"] = page["lead"][:CRYPTO_LEAD]
+    ajoutees = [{"title": None, "level": 2,
+                 "blocks": [{"type": "prose", "paragraphs": groupe}]}
+                for groupe in repartir(reste, CRYPTO_RANGEES)]
+    page["sections"] = ajoutees + page["sections"]
+
+    blocs = page["sections"][-1]["blocks"]
+    for i, bloc in enumerate(blocs):
+        if bloc["type"] != "prose":
+            continue
+        avert = [p for p in bloc["paragraphs"] if t["crypto_hint"] in p]
+        if not avert:
+            continue
+        bloc["paragraphs"] = [p for p in bloc["paragraphs"] if p not in avert]
+        blocs.insert(i + 1, {"type": "disclaimer", "paragraphs": avert})
+        return page
+
+    blocs.append({"type": "todo", "note": t["crypto_todo"]})
+    return page
+
+
 PATCHES = {
     "impressum": patch_impressum,
     "politique-de-confidentialite": patch_privacy,
     "notre-equipe": patch_team,
     "a-propos": patch_about,
+    "actifs-numeriques": patch_actifs_numeriques,
 }
 
 BANNER = ("// Généré depuis le contenu client (.odt) — ne pas éditer à la main.\n"

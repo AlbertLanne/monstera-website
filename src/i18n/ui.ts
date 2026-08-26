@@ -221,6 +221,7 @@ const fr = {
   /** Textes alternatifs des photographies choisies par nous, page par page. */
   alt: {
     aPropos: 'La fontaine du Jardin anglais à Genève',
+    actifsNumeriques: 'Maillons de chaîne translucides parcourus de chiffres binaires',
     services: 'Hall d’entrée en marbre et dorures d’un immeuble historique',
     servicesImmobilier: 'Façade d’une villa de prestige à Genève',
     notreEquipe: 'Escalier en marbre d’un intérieur institutionnel élégant',
@@ -438,6 +439,7 @@ const en: UIStrings = {
 
   alt: {
     aPropos: 'The fountain of the Jardin anglais in Geneva',
+    actifsNumeriques: 'Translucent chain links running with binary digits',
     services: 'Marble and gilded entrance hall of a historic building',
     servicesImmobilier: 'Facade of a prestige villa in Geneva',
     notreEquipe: 'Marble staircase in an elegant institutional interior',
@@ -653,6 +655,7 @@ const de: UIStrings = {
 
   alt: {
     aPropos: 'Der Brunnen im Jardin anglais in Genf',
+    actifsNumeriques: 'Durchscheinende Kettenglieder, durchzogen von Binärziffern',
     services: 'Eingangshalle aus Marmor und Vergoldungen eines historischen Gebäudes',
     servicesImmobilier: 'Fassade einer repräsentativen Villa in Genf',
     notreEquipe: 'Marmortreppe in einem eleganten institutionellen Innenraum',

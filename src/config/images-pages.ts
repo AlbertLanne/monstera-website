@@ -266,6 +266,17 @@ const CORPS_PAGES: Record<string, Pioche[]> = {
     ['capital-risque', 10],
     ['mezzanine-capital', 6],
   ],
+  // Digital Assets : le client n'a livré aucune photographie pour cette fiche. Le lot
+  // « Solutions technologiques & E-Mobilité » aurait semblé le voisin naturel, mais il est fait
+  // de trains, de tunnels et de bornes de recharge : un convoi CFF sous un paragraphe sur la
+  // tokenisation dessert le propos. Ce sont donc des façades — grille vitrée, géométrie de verre,
+  // ligne d'horizon — le registre abstrait déjà employé sur À propos et Discrétion, et le plus
+  // proche de ce dont parle la fiche : infrastructure, réseau, structure durable.
+  'actifs-numeriques': [
+    ['capital-risque', 5],
+    ['capital-investissement', 6],
+    ['capital-investissement', 9],
+  ],
   // Discrétion : architecture abstraite, aucun visage, aucun lieu reconnaissable.
   discretion: [
     ['capital-risque', 1],

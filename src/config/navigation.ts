@@ -80,6 +80,11 @@ export function mainNav(locale: Locale): NavLink[] {
       content: 'finance',
       children: financeLinks(locale),
     },
+    {
+      label: pages['actifs-numeriques'].menu,
+      href: lien(locale, '/actifs-numeriques'),
+      content: 'actifs-numeriques',
+    },
     { label: pages['a-propos'].menu, href: lien(locale, '/a-propos'), content: 'a-propos' },
     { label: pages.discretion.menu, href: lien(locale, '/discretion'), content: 'discretion' },
     { label: pages['notre-equipe'].menu, href: lien(locale, '/notre-equipe'), content: 'notre-equipe' },

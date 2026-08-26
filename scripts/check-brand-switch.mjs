@@ -58,6 +58,7 @@ const ROUTES = [
   '/finance/medecine-pharma',
   '/finance/solutions-technologiques-e-mobilite',
   '/finance/crowdfunding',
+  '/actifs-numeriques',
   '/a-propos',
   '/discretion',
   '/notre-equipe',
