@@ -62,8 +62,12 @@ export function EquipeGrid({ brand, locale }: { brand: Brand; locale: Locale }) 
     <section className="bg-page py-16 sm:py-20 lg:py-(--spacing-section)">
       <Container>
         <div className="flex flex-col gap-14">
-          {EQUIPE.map((groupe) => (
-            <div key={groupe.cle} data-reveal>
+          {EQUIPE.map((groupe, index) => (
+            <div
+              key={groupe.cle}
+              data-reveal
+              data-reveal-from={index % 2 === 0 ? 'gauche' : 'droite'}
+            >
               <div className="mb-2 flex flex-col gap-4">
                 <span aria-hidden="true" className="h-px w-14 bg-accent" />
                 <h2 className="font-(family-name:--font-display) text-[1.5rem] leading-[1.2] text-text-strong sm:text-[1.75rem]">

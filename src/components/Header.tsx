@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { BrandKey } from '@/brand/brands'
 import { useBrandActif } from '@/brand/useBrandActif'
 import { useBrandSwitch } from '@/brand/useBrandSwitch'
-import { BrandSwitcher, type Commandes } from '@/components/BrandSwitcher'
+import { BrandSwitcher } from '@/components/BrandSwitcher'
 import { LocaleSwitcher } from '@/components/LocaleSwitcher'
 import { Logo } from '@/components/Logo'
 import { Container } from '@/components/ui/Container'
@@ -120,20 +120,14 @@ function DesktopEntry({ link, pathname }: { link: NavLink; pathname: string }) {
 function MobileMenu({
   nav,
   pathname,
-  commandes,
-  locale,
-  strings,
   onClose,
 }: {
   nav: NavLink[]
   pathname: string
-  commandes: Commandes
-  locale: Locale
-  strings: UIStrings
   onClose: () => void
 }) {
   return (
-    <div className="fixed inset-0 top-[var(--header-h)] z-40 overflow-y-auto bg-menu xl:hidden">
+    <div className="fixed inset-0 top-[var(--header-h)] z-40 overflow-y-auto bg-menu lg:hidden">
       <Container className="py-8">
         <nav>
           <ul className="divide-y divide-menu-line">
@@ -171,19 +165,6 @@ function MobileMenu({
           </ul>
         </nav>
 
-        <div className="mt-10 border-t border-menu-line pt-8">
-          <p className="mb-3 text-[0.6875rem] uppercase tracking-[0.14em] text-white/60">
-            {strings.nav.entiteDuGroupe}
-          </p>
-          <BrandSwitcher commandes={commandes} locale={locale} strings={strings} onDark />
-        </div>
-
-        <div className="mt-8">
-          <p className="mb-3 text-[0.6875rem] uppercase tracking-[0.14em] text-white/60">
-            {strings.nav.langue}
-          </p>
-          <LocaleSwitcher strings={strings} onDark />
-        </div>
       </Container>
     </div>
   )
@@ -263,12 +244,30 @@ export function Header({
             : 'border-b border-header-line bg-(image:--header-bg)'
         }`}
       >
-        <Container className="flex h-full items-center justify-between gap-8">
-          <Link href={nav[0].href} aria-label={strings.nav.accueilAria} className="flex shrink-0 items-center">
+        {/* Bande utilitaire : qui l'on consulte, et dans quelle langue. Elle est plus sombre que
+            la navigation quand l'en-tête est opaque, et s'efface avec lui au-dessus de la vidéo
+            d'accueil — deux registres, une seule barre. */}
+        <div
+          className={`h-[var(--topbar-h)] transition-colors duration-300 ${
+            floating ? 'border-b border-white/10' : 'border-b border-white/8 bg-navy-950'
+          }`}
+        >
+          <Container className="flex h-full items-center justify-between gap-6">
+            <BrandSwitcher commandes={commandes} locale={locale} strings={strings} />
+            <LocaleSwitcher strings={strings} />
+          </Container>
+        </div>
+
+        <Container className="flex h-[var(--nav-h)] items-center justify-between gap-8">
+          <Link
+            href={nav[0].href}
+            aria-label={strings.nav.accueilAria}
+            className="flex shrink-0 items-center"
+          >
             <Logo brand={brandAffichee} fond="sombre" />
           </Link>
 
-          <nav aria-label={strings.nav.navigationAria} className="hidden xl:block">
+          <nav aria-label={strings.nav.navigationAria} className="hidden lg:block">
             <ul className="flex items-center gap-6">
               {nav.map((link) => (
                 <li key={link.href}>
@@ -278,39 +277,22 @@ export function Header({
             </ul>
           </nav>
 
-          <div className="flex items-center gap-3">
-            {/* Le masquage est porté par ces conteneurs : appliqué au composant, `hidden`
-                entrerait en conflit avec son propre `inline-flex`. */}
-            <div className="hidden sm:flex">
-              <BrandSwitcher commandes={commandes} locale={locale} strings={strings} onDark />
-            </div>
-            <div className="hidden sm:flex">
-              <LocaleSwitcher strings={strings} onDark />
-            </div>
-            <button
-              type="button"
-              onClick={() => setMenuOpen((open) => !open)}
-              aria-expanded={menuOpen}
-              aria-label={menuOpen ? strings.nav.fermerMenu : strings.nav.ouvrirMenu}
-              className="-mr-2 p-2 text-white xl:hidden"
-            >
-              <span aria-hidden="true" className="block text-lg leading-none">
-                {menuOpen ? '✕' : '☰'}
-              </span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-expanded={menuOpen}
+            aria-label={menuOpen ? strings.nav.fermerMenu : strings.nav.ouvrirMenu}
+            className="-mr-2 p-2 text-white lg:hidden"
+          >
+            <span aria-hidden="true" className="block text-lg leading-none">
+              {menuOpen ? '✕' : '☰'}
+            </span>
+          </button>
         </Container>
       </header>
 
       {menuOpen ? (
-        <MobileMenu
-          nav={nav}
-          pathname={pathname}
-          commandes={commandes}
-          locale={locale}
-          strings={strings}
-          onClose={() => setMenuOpen(false)}
-        />
+        <MobileMenu nav={nav} pathname={pathname} onClose={() => setMenuOpen(false)} />
       ) : null}
     </>
   )

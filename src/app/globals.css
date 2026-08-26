@@ -9,7 +9,12 @@
    d'une photographie n'aurait alors aucun effet. */
 @layer base {
   html {
-    --header-h: 4.5rem;
+    /* L'en-tête fixe tient deux rangées : la bande utilitaire (entité, langue) et la
+       navigation. `--header-h` reste leur total, puisque c'est lui que tout le reste
+       du site décale — ancres, ouvertures de page, tiroir mobile. */
+    --topbar-h: 2.125rem;
+    --nav-h: 4.5rem;
+    --header-h: calc(var(--topbar-h) + var(--nav-h));
     /* Marge latérale de la grille de page. Reprise à l'identique par `Container` (px-6/8/12) et
        par les rangées texte–image, qui n'utilisent pas `Container` mais doivent aligner leur
        colonne de texte sur la même verticale. */
@@ -21,7 +26,7 @@
 
   @media (min-width: 640px) {
     html {
-      --header-h: 5.25rem;
+      --nav-h: 5.25rem;
       --page-gutter: 2rem;
     }
   }

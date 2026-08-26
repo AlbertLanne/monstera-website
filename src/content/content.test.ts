@@ -50,8 +50,9 @@ describe.each(LOCALES)('intégrité des fiches — %s', (locale: Locale) => {
   const pages = CONTENT[locale]
   const allPages = Object.values(pages) as PageContent[]
 
-  it('couvre les vingt fiches livrées par le client', () => {
-    expect(allPages).toHaveLength(20)
+  // Vingt fiches à la livraison initiale, plus Digital Assets reçue le 26 août 2026.
+  it('couvre les vingt et une fiches livrées par le client', () => {
+    expect(allPages).toHaveLength(21)
   })
 
   it('donne un titre et du contenu à chaque fiche', () => {

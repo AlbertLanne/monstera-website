@@ -7,5 +7,7 @@ export function generateMetadata(): Promise<Metadata> {
 }
 
 export default function MentionsLegalesPage() {
-  return <ContentPage slug="mentions-legales" compact />
+  // Le client n'a pas terminé ce document par un bloc d'identité, contrairement à l'Impressum
+  // et à la politique de confidentialité : la mention d'éditeur est ajoutée ici.
+  return <ContentPage slug="mentions-legales" compact editeur />
 }

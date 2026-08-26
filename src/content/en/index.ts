@@ -13,6 +13,7 @@ import { energies_renouvelables } from './energies-renouvelables'
 import { medecine_pharma } from './medecine-pharma'
 import { solutions_technologiques_e_mobilite } from './solutions-technologiques-e-mobilite'
 import { crowdfunding } from './crowdfunding'
+import { actifs_numeriques } from './actifs-numeriques'
 import { a_propos } from './a-propos'
 import { discretion } from './discretion'
 import { notre_equipe } from './notre-equipe'
@@ -37,6 +38,7 @@ export const pages = {
   'medecine-pharma': medecine_pharma,
   'solutions-technologiques-e-mobilite': solutions_technologiques_e_mobilite,
   'crowdfunding': crowdfunding,
+  'actifs-numeriques': actifs_numeriques,
   'a-propos': a_propos,
   'discretion': discretion,
   'notre-equipe': notre_equipe,

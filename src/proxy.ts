@@ -30,10 +30,22 @@ import { DEFAULT_LOCALE, isLocale } from '@/i18n/locales'
  */
 const EST_FICHIER = /\.[a-z0-9]+$/i
 
+/**
+ * Les routes internes de Next, `/_next/image` en tête.
+ *
+ * L'optimiseur d'images sert chaque photographie du site sous une adresse qui ne porte pas
+ * d'extension : `EST_FICHIER` ne la reconnaît pas et la réécriture de langue l'enverrait sur
+ * `/fr/_next/image`, qui n'existe pas. Elle traverse donc sans réécriture, mais reçoit l'en-tête
+ * de non-indexation — c'est l'adresse que Google Images crawlerait, et la balise `meta` d'une
+ * page ne l'atteint pas.
+ */
+const EST_CHEMIN_TECHNIQUE = /^\/_next\//
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const premier = pathname.split('/')[1]
-  const estFichier = EST_FICHIER.test(pathname.split('/').pop() ?? '')
+  const estFichier =
+    EST_FICHIER.test(pathname.split('/').pop() ?? '') || EST_CHEMIN_TECHNIQUE.test(pathname)
 
   // `/fr/contact` n'est pas une adresse du site : sa forme canonique est `/contact`.
   if (premier === DEFAULT_LOCALE) {
@@ -73,6 +85,14 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Tout sauf les assets statiques, l'optimiseur d'images et les fichiers servis à la racine.
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|robots.txt).*)'],
+  /**
+   * Tout sauf les assets compilés et le `robots.txt`.
+   *
+   * `_next/image` **traverse** le proxy depuis le 26 août 2026 : c'est sous cette adresse que
+   * sont servies toutes les photographies du site, et sans en-tête elle restait la seule réponse
+   * du site qu'un moteur pouvait indexer. `_next/static` reste dehors — du JavaScript et des
+   * feuilles de style, qu'aucun moteur n'indexe, pour une requête de plus à chaque fichier.
+   * `robots.txt` reste dehors aussi : c'est lui qui porte la consigne, il doit rester lisible.
+   */
+  matcher: ['/((?!_next/static|robots.txt).*)'],
 }

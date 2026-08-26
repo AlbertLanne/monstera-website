@@ -6,6 +6,7 @@ import { HeroVideo } from '@/components/HeroVideo'
 import { PageBody } from '@/components/PageBody'
 import { TwoEntities } from '@/components/TwoEntities'
 import { Button } from '@/components/ui/Button'
+import { TitreAnime } from '@/components/media/TitreAnime'
 import { Container } from '@/components/ui/Container'
 import { imagesDeCorps } from '@/config/images-pages'
 import { getPage } from '@/content'
@@ -41,19 +42,29 @@ export default async function HomePage() {
         <HeroVideo />
 
         <Container className="relative pt-[calc(var(--header-h)+5rem)] pb-20 sm:pb-28">
-          <div data-reveal className="flex flex-col gap-7">
-            <div className="flex items-center gap-4">
+          {/* Comme sur `PageHero` : surtitre, titre, chapeau et boutons entrent séparément, par
+              la gauche et en cascade. L'accueil garde sa vidéo — pas de shader ici, le mouvement
+              du plan fait déjà le travail que le shader fait sur une photographie fixe. */}
+          <div className="flex flex-col gap-7">
+            <div data-reveal data-reveal-from="gauche" className="flex items-center gap-4">
               <span aria-hidden="true" className="h-px w-14 bg-white/70" />
               <span className="text-[0.6875rem] uppercase tracking-[0.16em] text-white/80">
                 {t.accueil.lieu}
               </span>
             </div>
 
-            <h1 className="max-w-[24ch] text-[2.125rem] leading-[1.1] text-white sm:text-[3.25rem] sm:leading-[1.08] lg:text-[4.25rem]">
-              {resolveBrandText(page.title ?? brand.legalName, brand)}
-            </h1>
+            <TitreAnime
+              as="h1"
+              texte={resolveBrandText(page.title ?? brand.legalName, brand)}
+              className="max-w-[24ch] text-[2.125rem] leading-[1.1] text-white sm:text-[3.25rem] sm:leading-[1.08] lg:text-[4.25rem]"
+            />
 
-            <div className="max-w-(--container-prose) space-y-4">
+            <div
+              data-reveal
+              data-reveal-from="gauche"
+              data-reveal-delay="2"
+              className="max-w-(--container-prose) space-y-4"
+            >
               {page.lead.map((paragraph, index) => (
                 <p key={index} className="text-[1.0625rem] leading-[1.75] text-white/85 sm:text-[1.125rem]">
                   {resolveBrandText(paragraph, brand)}
@@ -61,7 +72,12 @@ export default async function HomePage() {
               ))}
             </div>
 
-            <div className="mt-2 flex flex-wrap gap-4">
+            <div
+              data-reveal
+              data-reveal-from="gauche"
+              data-reveal-delay="3"
+              className="mt-2 flex flex-wrap gap-4"
+            >
               {/* Sur la vidéo, aucun jeton de thème ne s'applique : les deux boutons sont
                   explicitement traités pour fond sombre. */}
               <Button href={pathnameForLocale('/contact', locale)} variant="solidOnDark">
@@ -86,6 +102,7 @@ export default async function HomePage() {
               <div
                 key={figure.valeur}
                 data-reveal
+                data-reveal-from={index % 2 === 0 ? 'gauche' : 'droite'}
                 data-reveal-delay={index + 1}
                 className="flex flex-col gap-2"
               >

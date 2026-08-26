@@ -58,6 +58,7 @@ const ROUTES = [
   '/finance/medecine-pharma',
   '/finance/solutions-technologiques-e-mobilite',
   '/finance/crowdfunding',
+  '/actifs-numeriques',
   '/a-propos',
   '/discretion',
   '/notre-equipe',
@@ -140,14 +141,66 @@ async function afficher(marque, route = '/') {
   await aller(page, `${BASE}${route}`)
 }
 
+/**
+ * Le sélecteur d'entité et celui de langue sont des déroulants : un déclencheur qui énonce l'état
+ * courant, et un panneau relié par `aria-controls`, rendu dans le document mais masqué tant qu'on
+ * n'a pas cliqué. On entre donc par le **nom accessible du déclencheur** — c'est ce qu'annonce un
+ * lecteur d'écran, et le vérifier ici a une valeur propre.
+ *
+ * Les `href` se lisent panneau fermé : le contenu est dans le DOM. Le texte affiché, lui, exige
+ * de l'ouvrir — `innerText` ne rend que ce qui est mis en page.
+ */
+function deroulant(nom) {
+  const declencheur = page.getByRole('button', { name: nom }).first()
+
+  const panneau = async () =>
+    page.locator(`[id="${await declencheur.getAttribute('aria-controls')}"]`)
+
+  return {
+    declencheur,
+    panneau,
+    async ouvrir() {
+      if ((await declencheur.getAttribute('aria-expanded')) !== 'true') await declencheur.click()
+    },
+    async liens() {
+      return (await panneau())
+        .locator('a')
+        .evaluateAll((liens) => liens.map((a) => a.getAttribute('href')))
+    },
+    /** Ce que le sélecteur donne à lire une fois déployé : déclencheur et panneau. */
+    async texteDeploye() {
+      if ((await declencheur.getAttribute('aria-expanded')) !== 'true') await declencheur.click()
+      return `${await declencheur.innerText()} ${await (await panneau()).innerText()}`
+    },
+  }
+}
+
+const SELECTEUR_ENTITE = /Entité du groupe Argentum/
+const SELECTEUR_LANGUE = /Langue du site|Website language|Sprache der Website/
+
 /** Les liens du sélecteur d'entité de l'en-tête, par domaine visé. */
 async function liensDuSelecteur() {
-  const selecteur = page.getByRole('group', { name: 'Entité du groupe Argentum' }).first()
-  return selecteur.locator('a').evaluateAll((liens) => liens.map((a) => a.getAttribute('href')))
+  return deroulant(SELECTEUR_ENTITE).liens()
+}
+
+// --- 0. C'est bien le bon site ---------------------------------------------
+// Le port 3000 est le défaut de tous les projets de la machine. Un autre site qui l'occupe rend
+// une page valide, avec un pied de page : le balayage court alors jusqu'au bout et ne signale
+// rien d'utile — le 23 août, il a interrogé un site sans rapport pendant trente secondes avant
+// d'échouer sur un délai dépassé. On refuse tout de suite plutôt que de rendre un vert faux.
+await aller(page, `${BASE}/`)
+const marqueur = await page.locator('html').getAttribute('data-brand')
+if (!marqueur) {
+  console.error(
+    `\n${BASE} ne sert pas Argentum : la racine n'a pas d'attribut « data-brand ».\n` +
+      `Un autre projet occupe sans doute le port. Lancez « pnpm dev --port <libre> » et passez\n` +
+      `l'adresse en argument : node scripts/check-brand-switch.mjs http://localhost:<libre>\n`,
+  )
+  await browser.close()
+  process.exit(2)
 }
 
 // --- 1. Mécanisme ----------------------------------------------------------
-await aller(page, `${BASE}/`)
 check('état initial : thème', await brandAttr(), 'investments')
 
 const footerInitial = await page.locator('footer').innerText()
@@ -157,9 +210,10 @@ check('état initial : registre affiché', footerInitial.includes('CH-660.0.244.
 check('état initial : UID affiché', footerInitial.includes('CHE-134.341.014'), true)
 
 // Le sélecteur porte la raison sociale complète, pas le seul mot distinctif.
-const selecteur = page.getByRole('group', { name: 'Entité du groupe Argentum' }).first()
 // `innerText` rend le texte tel qu'il s'affiche, capitales du CSS comprises.
-const texteSelecteur = (await selecteur.innerText()).replace(/\s+/g, ' ').toLowerCase()
+const texteSelecteur = (await deroulant(SELECTEUR_ENTITE).texteDeploye())
+  .replace(/\s+/g, ' ')
+  .toLowerCase()
 check(
   'sélecteur : raison sociale complète d’Investments',
   texteSelecteur.includes('argentum investments sa'),
@@ -336,8 +390,7 @@ for (const [depuis, attendus] of [
   ['/de/finance', ['/finance', '/en/finance']],
 ]) {
   await aller(page, `${BASE}${depuis}`)
-  const selecteur = page.getByRole('group', { name: /Langue du site|Website language|Sprache der Website/ }).first()
-  const liens = await selecteur.locator('a').evaluateAll((els) => els.map((a) => a.getAttribute('href')))
+  const liens = await deroulant(SELECTEUR_LANGUE).liens()
   check(`langue depuis ${depuis} : deux liens`, liens.length, 2)
   check(`langue depuis ${depuis} : cibles`, liens.sort().join(' '), attendus.sort().join(' '))
 }

@@ -68,6 +68,9 @@ const fr = {
     pays: 'Suisse',
     droitsReserves: 'Tous droits réservés.',
     registreCourt: 'Registre du commerce',
+    editeurDuSite: 'Éditeur du site',
+    editeurMention: 'Le présent site est édité par la société suivante :',
+    hebergement: 'Hébergement',
     avertissement:
       'n’est ni une banque ni un établissement de crédit et n’exerce pas d’activité conventionnelle ' +
       'd’intermédiation en crédit. Le contenu de ce site ne constitue ni une offre publique, ni une ' +
@@ -218,6 +221,7 @@ const fr = {
   /** Textes alternatifs des photographies choisies par nous, page par page. */
   alt: {
     aPropos: 'La fontaine du Jardin anglais à Genève',
+    actifsNumeriques: 'Maillons de chaîne translucides parcourus de chiffres binaires',
     services: 'Hall d’entrée en marbre et dorures d’un immeuble historique',
     servicesImmobilier: 'Façade d’une villa de prestige à Genève',
     notreEquipe: 'Escalier en marbre d’un intérieur institutionnel élégant',
@@ -285,6 +289,9 @@ const en: UIStrings = {
     pays: 'Switzerland',
     droitsReserves: 'All rights reserved.',
     registreCourt: 'Commercial register',
+    editeurDuSite: 'Site publisher',
+    editeurMention: 'This website is published by the following company:',
+    hebergement: 'Hosting',
     avertissement:
       'is neither a bank nor a credit institution and does not carry out conventional credit ' +
       'intermediation. The content of this website constitutes neither a public offer, nor an ' +
@@ -432,6 +439,7 @@ const en: UIStrings = {
 
   alt: {
     aPropos: 'The fountain of the Jardin anglais in Geneva',
+    actifsNumeriques: 'Translucent chain links running with binary digits',
     services: 'Marble and gilded entrance hall of a historic building',
     servicesImmobilier: 'Facade of a prestige villa in Geneva',
     notreEquipe: 'Marble staircase in an elegant institutional interior',
@@ -497,6 +505,9 @@ const de: UIStrings = {
     pays: 'Schweiz',
     droitsReserves: 'Alle Rechte vorbehalten.',
     registreCourt: 'Handelsregister',
+    editeurDuSite: 'Betreiber der Website',
+    editeurMention: 'Diese Website wird von folgender Gesellschaft betrieben:',
+    hebergement: 'Hosting',
     avertissement:
       'ist weder eine Bank noch ein Kreditinstitut und übt keine herkömmliche Kreditvermittlung ' +
       'aus. Die Inhalte dieser Website stellen weder ein öffentliches Angebot noch eine ' +
@@ -644,6 +655,7 @@ const de: UIStrings = {
 
   alt: {
     aPropos: 'Der Brunnen im Jardin anglais in Genf',
+    actifsNumeriques: 'Durchscheinende Kettenglieder, durchzogen von Binärziffern',
     services: 'Eingangshalle aus Marmor und Vergoldungen eines historischen Gebäudes',
     servicesImmobilier: 'Fassade einer repräsentativen Villa in Genf',
     notreEquipe: 'Marmortreppe in einem eleganten institutionellen Innenraum',
