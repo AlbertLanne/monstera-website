@@ -45,7 +45,7 @@ export function PageHero({
             src={image}
             alt={imageAlt ?? ''}
             priority
-            sizes="100vw"
+            sizes="150vw"
             placeholder="blur"
             data-parallax="7"
             className="brand-media absolute inset-0 -z-10 h-full w-full object-cover"

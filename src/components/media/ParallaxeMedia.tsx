@@ -40,7 +40,7 @@ export function BandeauImage({
         <Image
           src={image.src}
           alt={alt}
-          sizes="100vw"
+          sizes="150vw"
           placeholder="blur"
           data-parallax="9"
           className="brand-media absolute inset-0 h-full w-full object-cover"

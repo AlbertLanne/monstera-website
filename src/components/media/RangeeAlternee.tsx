@@ -125,7 +125,7 @@ function DemiImage({
         <Image
           src={image.src}
           alt={alt}
-          sizes="(min-width: 1024px) 60vw, 120vw"
+          sizes="(min-width: 1024px) 90vw, 180vw"
           placeholder="blur"
           data-parallax="6"
           className="brand-media absolute inset-0 h-full w-full object-cover"
