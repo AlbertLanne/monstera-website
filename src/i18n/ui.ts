@@ -71,6 +71,9 @@ const fr = {
     editeurDuSite: 'Éditeur du site',
     editeurMention: 'Le présent site est édité par la société suivante :',
     hebergement: 'Hébergement',
+    realisation: 'Réalisation du site',
+    realisationMention: 'Ce site a été conçu et réalisé par :',
+    telephoneCourt: 'Téléphone',
     avertissement:
       'n’est ni une banque ni un établissement de crédit et n’exerce pas d’activité conventionnelle ' +
       'd’intermédiation en crédit. Le contenu de ce site ne constitue ni une offre publique, ni une ' +
@@ -292,6 +295,9 @@ const en: UIStrings = {
     editeurDuSite: 'Site publisher',
     editeurMention: 'This website is published by the following company:',
     hebergement: 'Hosting',
+    realisation: 'Website production',
+    realisationMention: 'This website was designed and built by:',
+    telephoneCourt: 'Phone',
     avertissement:
       'is neither a bank nor a credit institution and does not carry out conventional credit ' +
       'intermediation. The content of this website constitutes neither a public offer, nor an ' +
@@ -508,6 +514,9 @@ const de: UIStrings = {
     editeurDuSite: 'Betreiber der Website',
     editeurMention: 'Diese Website wird von folgender Gesellschaft betrieben:',
     hebergement: 'Hosting',
+    realisation: 'Realisierung der Website',
+    realisationMention: 'Diese Website wurde konzipiert und umgesetzt von:',
+    telephoneCourt: 'Telefon',
     avertissement:
       'ist weder eine Bank noch ein Kreditinstitut und übt keine herkömmliche Kreditvermittlung ' +
       'aus. Die Inhalte dieser Website stellen weder ein öffentliches Angebot noch eine ' +
