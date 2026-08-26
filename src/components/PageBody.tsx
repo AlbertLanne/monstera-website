@@ -1,5 +1,6 @@
 import { resolveBrandText, type Brand } from '@/brand/brands'
 import { BlockRenderer, type Tone } from '@/components/blocks/BlockRenderer'
+import { EditeurDuSite } from '@/components/EditeurDuSite'
 import { planifierImages } from '@/components/media/plan-images'
 import { RangeeAlternee } from '@/components/media/RangeeAlternee'
 import { Container } from '@/components/ui/Container'
@@ -123,11 +124,14 @@ function CompactBody({
   brand,
   ctaHref,
   locale,
+  editeur = false,
 }: {
   page: PageContent
   brand: Brand
   ctaHref: string
   locale: Locale
+  /** Ajoute la mention d'éditeur en fin de colonne. Voir `PageBody`. */
+  editeur?: boolean
 }) {
   return (
     <section className="bg-page py-16 sm:py-20">
@@ -152,6 +156,11 @@ function CompactBody({
               ))}
             </div>
           ))}
+          {editeur ? (
+            <div data-reveal className="border-t border-line pt-12">
+              <EditeurDuSite brand={brand} locale={locale} />
+            </div>
+          ) : null}
         </div>
       </Container>
     </section>
@@ -185,6 +194,7 @@ export function PageBody({
   locale,
   ctaHref,
   compact = false,
+  editeur = false,
   images = [],
 }: {
   page: PageContent
@@ -194,12 +204,22 @@ export function PageBody({
   ctaHref?: string
   /** Colonne continue plutôt que sections pleine largeur. Pour les pages juridiques. */
   compact?: boolean
+  /**
+   * Ferme la page sur la mention d'éditeur.
+   *
+   * Réservé aux pages légales que le client n'a pas terminées par un bloc d'identité — les autres
+   * le portent déjà dans leur contenu, l'ajouter ici l'afficherait deux fois.
+   */
+  editeur?: boolean
   /** Images à répartir entre les sections. Voir `plan-images.ts`. */
   images?: ImageFiche[]
 }) {
   const cible = ctaHref ?? pathnameForLocale('/contact', locale)
 
-  if (compact) return <CompactBody page={page} brand={brand} locale={locale} ctaHref={cible} />
+  if (compact)
+    return (
+      <CompactBody page={page} brand={brand} locale={locale} ctaHref={cible} editeur={editeur} />
+    )
 
   const sections = page.sections
   const tones = planTones(sections)

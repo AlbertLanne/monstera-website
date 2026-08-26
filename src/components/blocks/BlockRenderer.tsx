@@ -1,6 +1,6 @@
 import { resolveBrandText, type Brand } from '@/brand/brands'
 import { Button } from '@/components/ui/Button'
-import { LegalIdentity } from '@/components/LegalIdentity'
+import { EditeurDuSite } from '@/components/EditeurDuSite'
 import type { Block } from '@/content/types'
 import type { Locale } from '@/i18n/locales'
 
@@ -225,7 +225,9 @@ export function BlockRenderer({ block, brand, locale, tone, ctaHref }: RenderPro
     case 'definitions':
       return <Definitions items={block.items} brand={brand} tone={tone} />
     case 'legalIdentity':
-      return <LegalIdentity brand={brand} locale={locale} />
+      // Le bloc que le client appelle « identité légale » est, sur ces pages, la mention
+      // d'éditeur : c'est la société affichée qui édite le site.
+      return <EditeurDuSite brand={brand} locale={locale} />
     case 'disclaimer':
       return <Disclaimer paragraphs={block.paragraphs} brand={brand} />
     case 'button':

@@ -19,6 +19,8 @@ export type ContentPageProps = {
   ctaHref?: string
   /** Colonne continue plutôt que sections pleine largeur. Pour les pages juridiques. */
   compact?: boolean
+  /** Ferme la page sur la mention d'éditeur du site. Voir `PageBody`. */
+  editeur?: boolean
 }
 
 /**
@@ -38,6 +40,7 @@ export async function ContentPage({
   imageAlt,
   ctaHref,
   compact,
+  editeur,
 }: ContentPageProps) {
   const brand = await getBrand()
   const locale = await getLocale()
@@ -64,6 +67,7 @@ export async function ContentPage({
         locale={locale}
         ctaHref={ctaHref}
         compact={compact}
+        editeur={editeur}
         images={corps}
       />
     </>
